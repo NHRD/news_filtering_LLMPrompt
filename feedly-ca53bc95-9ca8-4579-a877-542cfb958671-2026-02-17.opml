@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<opml version="1.0">
+    <head>
+        <title>Naohisa subscriptions in feedly Cloud</title>
+    </head>
+    <body>
+        <outline text="Tech news" title="Tech news">
+            <outline type="rss" text="NYT &gt; Automobiles" title="NYT &gt; Automobiles" xmlUrl="http://wheels.blogs.nytimes.com/feed/" htmlUrl="https://www.nytimes.com/section/automobiles"/>
+            <outline type="rss" text="&quot;autonomous vehicles&quot; - Google News" title="&quot;autonomous vehicles&quot; - Google News" xmlUrl="http://news.google.com/news?hl=en&amp;gl=us&amp;q=autonomous%20vehicles&amp;um=1&amp;ie=UTF-8&amp;output=rss" htmlUrl="https://news.google.com/search?hl=en-US&amp;gl=US&amp;ceid=US:en&amp;q=autonomous+vehicles"/>
+            <outline type="rss" text="ADAS &amp; Autonomous Vehicle International" title="ADAS &amp; Autonomous Vehicle International" xmlUrl="https://www.autonomousvehicleinternational.com/feed" htmlUrl="https://www.autonomousvehicleinternational.com/"/>
+            <outline type="rss" text="Zennのトレンド" title="Zennのトレンド" xmlUrl="https://zenn.dev/feed" htmlUrl="https://zenn.dev"/>
+            <outline type="rss" text="Autoblog Autonomous" title="Autoblog Autonomous" xmlUrl="http://www.autoblog.com/category/autonomous/rss.xml" htmlUrl="https://www.autoblog.com"/>
+            <outline type="rss" text="Auto Rental News" title="Auto Rental News" xmlUrl="http://feeds.feedburner.com/AutoRentalNews" htmlUrl="https://www.autorentalnews.com"/>
+            <outline type="rss" text="TheTruthAboutCars" title="TheTruthAboutCars" xmlUrl="http://www.thetruthaboutcars.com/?feed=rss2" htmlUrl="https://www.thetruthaboutcars.com"/>
+            <outline type="rss" text="News Archives – Car Dealer Magazine" title="News Archives – Car Dealer Magazine" xmlUrl="http://www.cardealermagazine.co.uk/publish/category/latest-news/feed" htmlUrl="https://cardealermagazine.co.uk/category/latest-news"/>
+            <outline type="rss" text="InsideEVs - Articles" title="InsideEVs - Articles" xmlUrl="http://insideevs.com/feed/" htmlUrl="https://insideevs.com/"/>
+            <outline type="rss" text="MIT News - Artificial intelligence" title="MIT News - Artificial intelligence" xmlUrl="http://news.mit.edu/rss/topic/artificial-intelligence2" htmlUrl="https://news.mit.edu/rss/topic/artificial-intelligence2"/>
+            <outline type="rss" text="Artificial Intelligence (AI) | TechCrunch" title="Artificial Intelligence (AI) | TechCrunch" xmlUrl="https://techcrunch.com/tag/artificial-intelligence/feed/" htmlUrl="https://techcrunch.com/tag/artificial-intelligence/"/>
+            <outline type="rss" text="Business Wire Automotive News" title="Business Wire Automotive News" xmlUrl="https://feed.businesswire.com/rss/home/?rss=G1QFDERJXkJeEVlZXw==" htmlUrl="http://www.businesswire.com/portal/site/home/news/industry/?vnsId=30901"/>
+            <outline type="rss" text="Self-driving cars | The Guardian" title="Self-driving cars | The Guardian" xmlUrl="https://www.theguardian.com/technology/self-driving-cars/rss" htmlUrl="https://www.theguardian.com/technology/self-driving-cars"/>
+            <outline type="rss" text="Electric Cars Report" title="Electric Cars Report" xmlUrl="http://feeds.feedburner.com/ElectricCarsReport" htmlUrl="https://electriccarsreport.com/"/>
+            <outline type="rss" text="ScienceDaily - Artificial Intelligence" title="ScienceDaily - Artificial Intelligence" xmlUrl="http://www.sciencedaily.com/rss/computers_math/artificial_intelligence.xml" htmlUrl="https://www.sciencedaily.com/news/computers_math/artificial_intelligence/"/>
+            <outline type="rss" text="The Last Driver License Holder…" title="The Last Driver License Holder…" xmlUrl="https://thelastdriverlicenseholder.com/feed/" htmlUrl="https://thelastdriverlicenseholder.com"/>
+            <outline type="rss" text="Ledge.ai" title="Ledge.ai" xmlUrl="https://feedly.com/web/c7e34d7e-ba3d-498a-ab23-46b2d27a7c18" htmlUrl="https://ledge.ai/"/>
+            <outline type="rss" text="Substack" title="Substack" xmlUrl="https://feedly.com/web/cf1ed5a0-2cb4-4fe2-922a-dbdf8e29aa59" htmlUrl="https://substack.com/browse/staff-picks"/>
+            <outline type="rss" text="AI News" title="AI News" xmlUrl="https://www.artificialintelligence-news.com/feed/" htmlUrl="https://www.artificialintelligence-news.com/"/>
+            <outline type="rss" text="Artificial Intelligence" title="Artificial Intelligence" xmlUrl="https://flipboard.com/topic/artificialintelligence.rss" htmlUrl="https://flipboard.com/topic/artificialintelligence"/>
+            <outline type="rss" text="Artificial Intelligence on Medium" title="Artificial Intelligence on Medium" xmlUrl="https://medium.com/feed/tag/artificial-intelligence" htmlUrl="https://medium.com/tag/artificial-intelligence/latest?source=rss------artificial_intelligence-5"/>
+            <outline type="rss" text="AM-online" title="AM-online" xmlUrl="http://www.am-online.com/RSS.xml?SectionID=3&amp;ArticleType=news" htmlUrl="https://www.am-online.com/"/>
+            <outline type="rss" text="Automotive World" title="Automotive World" xmlUrl="http://www.automotiveworld.com/rss" htmlUrl="https://www.automotiveworld.com/"/>
+            <outline type="rss" text="ADAS and Autonomous Vehicle International Press Releases" title="ADAS and Autonomous Vehicle International Press Releases" xmlUrl="https://feedproxy.feedly.com/34e9b732-3677-4af9-a756-d7a8b1d221df" htmlUrl="https://www.autonomousvehicleinternational.com/news"/>
+            <outline type="rss" text="Fleet Europe" title="Fleet Europe" xmlUrl="http://www.fleeteurope.com/rss.xml" htmlUrl="https://www.fleeteurope.com"/>
+            <outline type="rss" text="Green Car Reports" title="Green Car Reports" xmlUrl="http://feeds2.feedburner.com/GreenCarReports" htmlUrl="https://www.greencarreports.com"/>
+            <outline type="rss" text="Telematics News" title="Telematics News" xmlUrl="http://telematicsnews.info/feed/" htmlUrl="https://telematicsnews.info"/>
+            <outline type="rss" text="Autoblog News" title="Autoblog News" xmlUrl="http://www.autoblog.com/rss.xml" htmlUrl="https://www.autoblog.com"/>
+            <outline type="rss" text="Electrek" title="Electrek" xmlUrl="http://electrek.co/feed/" htmlUrl="https://electrek.co/"/>
+            <outline type="rss" text="Car News | Latest Motoring Headlines | Cars UK" title="Car News | Latest Motoring Headlines | Cars UK" xmlUrl="http://www.carsuk.net/feed/" htmlUrl="https://www.carsuk.net/car-news/"/>
+        </outline>
+        <outline text="sub" title="sub">
+            <outline type="rss" text="FRB: Working Papers" title="FRB: Working Papers" xmlUrl="http://www.federalreserve.gov/feeds/working_papers.xml" htmlUrl="https://www.federalreserve.gov/feeds/feeds.htm"/>
+            <outline type="rss" text="Washington Post: Breaking News, World, US, DC News &amp; Analysis" title="Washington Post: Breaking News, World, US, DC News &amp; Analysis" xmlUrl="http://www.washingtonpost.com/rss/homepage" htmlUrl="http://www.washingtonpost.com/pb/homepage/"/>
+            <outline type="rss" text="Earnings Articles on Seeking Alpha" title="Earnings Articles on Seeking Alpha" xmlUrl="http://seekingalpha.com/tag/earnings.xml" htmlUrl="https://seekingalpha.com"/>
+            <outline type="rss" text="Open Outcrier / @OpenOutcrier" title="Open Outcrier / @OpenOutcrier" xmlUrl="https://nitter.net/OpenOutcrier/rss" htmlUrl="https://nitter.net/OpenOutcrier"/>
+            <outline type="rss" text="MarketBeat" title="MarketBeat" xmlUrl="http://feeds.wsjonline.com/wsj/marketbeat/feed" htmlUrl="https://blogs.wsj.com/marketbeat"/>
+            <outline type="rss" text="Reuters" title="Reuters" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UChqUTb7kYRX8-EiaN3XFrSQ" htmlUrl="https://www.youtube.com/channel/UChqUTb7kYRX8-EiaN3XFrSQ"/>
+            <outline type="rss" text="First Squawk / @FirstSquawk" title="First Squawk / @FirstSquawk" xmlUrl="https://nitter.net/FirstSquawk/rss" htmlUrl="https://nitter.net/FirstSquawk"/>
+            <outline type="rss" text="FreightWaves" title="FreightWaves" xmlUrl="https://feeds.feedburner.com/Freightwaves" htmlUrl="https://www.freightwaves.com/"/>
+            <outline type="rss" text="Lifehacker" title="Lifehacker" xmlUrl="https://lifehacker.com/rss" htmlUrl="https://lifehacker.com/feed/rss"/>
+            <outline type="rss" text="Breaking News - The Fly" title="Breaking News - The Fly" xmlUrl="https://node2.feed43.com/theflyfeed.xml" htmlUrl="https://thefly.com/news.php"/>
+            <outline type="rss" text="SpotGamma / @spotgamma" title="SpotGamma / @spotgamma" xmlUrl="https://nitter.net/spotgamma/rss" htmlUrl="https://nitter.net/spotgamma"/>
+            <outline type="rss" text="ブルームバーグ 経済指標" title="ブルームバーグ 経済指標" xmlUrl="https://assets.wor.jp/rss/rdf/bloomberg/economy.rdf" htmlUrl="https://www.bloomberg.co.jp/news/economy"/>
+            <outline type="rss" text="Gizmodo" title="Gizmodo" xmlUrl="http://feeds.gawker.com/gizmodo/full" htmlUrl="https://gizmodo.com/"/>
+            <outline type="rss" text="GIGAZINE" title="GIGAZINE" xmlUrl="http://gigazine.net/index.php?/news/rss_2.0/" htmlUrl="https://gigazine.net/"/>
+            <outline type="rss" text="FRB: Speeches and Testimony" title="FRB: Speeches and Testimony" xmlUrl="http://www.federalreserve.gov/feeds/speeches_and_testimony.xml" htmlUrl="https://www.federalreserve.gov/feeds/feeds.htm"/>
+            <outline type="rss" text="Central Bank News" title="Central Bank News" xmlUrl="http://www.centralbanknews.info/feeds/posts/default" htmlUrl="http://www.centralbanknews.info/"/>
+            <outline type="rss" text="Nareit - News" title="Nareit - News" xmlUrl="https://www.reit.com/news/rss.xml" htmlUrl="https://www.reit.com/"/>
+            <outline type="rss" text="Wolf Street" title="Wolf Street" xmlUrl="http://wolfstreet.com/feed/" htmlUrl="https://wolfstreet.com"/>
+            <outline type="rss" text="MarketWatch.com - Top Stories" title="MarketWatch.com - Top Stories" xmlUrl="http://www.marketwatch.com/rss/topstories" htmlUrl="http://www.marketwatch.com/"/>
+            <outline type="rss" text="Financial Post - RSS Feed" title="Financial Post - RSS Feed" xmlUrl="http://business.financialpost.com/category/news/fp-street/feed/" htmlUrl="https://financialpost.com/"/>
+            <outline type="rss" text="ジェトロ ビジネス短信" title="ジェトロ ビジネス短信" xmlUrl="https://www.jetro.go.jp/rss/biznews.xml" htmlUrl="https://www.jetro.go.jp/biznews.html"/>
+            <outline type="rss" text="Michael J. Kramer / @MichaelMOTTCM" title="Michael J. Kramer / @MichaelMOTTCM" xmlUrl="https://nitter.net/MichaelMOTTCM/rss" htmlUrl="https://nitter.net/MichaelMOTTCM"/>
+            <outline type="rss" text="ロイター 経済" title="ロイター 経済" xmlUrl="https://assets.wor.jp/rss/rdf/reuters/economy.rdf" htmlUrl="https://jp.reuters.com/economy/"/>
+            <outline type="rss" text="Forbes.com: Business News" title="Forbes.com: Business News" xmlUrl="http://www.forbes.com/business/index.xml" htmlUrl="http://www.forbes.com/business"/>
+            <outline type="rss" text="Bloomberg Markets" title="Bloomberg Markets" xmlUrl="http://feedmaker.kindle4rss.com/feeds/bloomberg.xml" htmlUrl="https://www.bloomberg.com/markets"/>
+            <outline type="rss" text="TechCrunch" title="TechCrunch" xmlUrl="https://techcrunch.com/feed/" htmlUrl="https://techcrunch.com/"/>
+            <outline type="rss" text="FactSet Insight" title="FactSet Insight" xmlUrl="http://insight.factset.com/rss.xml" htmlUrl="https://insight.factset.com"/>
+            <outline type="rss" text="FRB: Press Release - All Releases" title="FRB: Press Release - All Releases" xmlUrl="http://www.federalreserve.gov/feeds/press_all.xml" htmlUrl="https://www.federalreserve.gov/feeds/feeds.htm"/>
+            <outline type="rss" text="Reuters: Top News" title="Reuters: Top News" xmlUrl="http://ftr.fivefilters.org/makefulltextfeed.php?url=http%3A%2F%2Ffeeds.reuters.com%2Freuters%2FtopNews&amp;max=3" htmlUrl="http://feeds.reuters.com/reuters/topNews"/>
+            <outline type="rss" text="Latest from Tom's Hardware" title="Latest from Tom's Hardware" xmlUrl="https://www.tomshardware.com/feeds/all" htmlUrl="https://www.tomshardware.com"/>
+            <outline type="rss" text="Placer.ai" title="Placer.ai" xmlUrl="https://www.placer.ai/feed/" htmlUrl="https://www.placer.ai/"/>
+            <outline type="rss" text="UPBOptionMil / @UPBOptionMil" title="UPBOptionMil / @UPBOptionMil" xmlUrl="https://nitter.net/UPBOptionMil/rss" htmlUrl="https://nitter.net/UPBOptionMil"/>
+            <outline type="rss" text="DIGITIMES Asia: News and Insight of the Global Supply Chain" title="DIGITIMES Asia: News and Insight of the Global Supply Chain" xmlUrl="https://www.digitimes.com/rss/daily.xml" htmlUrl="https://www.digitimes.com"/>
+            <outline type="rss" text="Redfin Real Estate News" title="Redfin Real Estate News" xmlUrl="https://www.redfin.com/news/feed/" htmlUrl="https://www.redfin.com/news/"/>
+            <outline type="rss" text="The Motley Fool" title="The Motley Fool" xmlUrl="http://www.fool.com/About/headlines/rss_headlines.asp" htmlUrl="https://www.fool.com/"/>
+            <outline type="rss" text="Search results for &quot;@t1alpha&quot;" title="Search results for &quot;@t1alpha&quot;" xmlUrl="https://nitter.moooi.jp/search/rss?f=tweets&amp;q=%40t1alpha" htmlUrl="https://nitter.moooi.jp/search"/>
+            <outline type="rss" text="GIZMODE Japan （ギズモードジャパン）" title="GIZMODE Japan （ギズモードジャパン）" xmlUrl="http://gizmode.blog26.fc2.com/?xml" htmlUrl="http://gizmode.blog26.fc2.com/"/>
+            <outline type="rss" text="FRB: Data Download Program (DDP)" title="FRB: Data Download Program (DDP)" xmlUrl="http://www.federalreserve.gov/feeds/datadownload.xml" htmlUrl="http://www.federalreserve.gov/feeds/DataDownload.xml"/>
+            <outline type="rss" text="ECB - European Central Bank" title="ECB - European Central Bank" xmlUrl="https://www.ecb.europa.eu/rss/rbu.html" htmlUrl="https://www.ecb.europa.eu/"/>
+            <outline type="rss" text="ブルームバーグ トップニュース" title="ブルームバーグ トップニュース" xmlUrl="https://assets.wor.jp/rss/rdf/bloomberg/top.rdf" htmlUrl="https://www.bloomberg.co.jp/"/>
+            <outline type="rss" text="YT FINANCE" title="YT FINANCE" xmlUrl="https://www.yuantalks.com/feed/" htmlUrl="https://www.yuantalks.com"/>
+            <outline type="rss" text="Most popular articles" title="Most popular articles" xmlUrl="http://seekingalpha.com/listing/most-popular-articles.xml" htmlUrl="https://seekingalpha.com"/>
+            <outline type="rss" text="The New York Times" title="The New York Times" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCqnbDFdCpuN8CMEg0VuEBqA" htmlUrl="https://www.youtube.com/channel/UCqnbDFdCpuN8CMEg0VuEBqA"/>
+            <outline type="rss" text="ニュースリリース｜アライアンス・バーンスタイン" title="ニュースリリース｜アライアンス・バーンスタイン" xmlUrl="https://www.alliancebernstein.co.jp/news/index.rss" htmlUrl="https://www.alliancebernstein.co.jp/"/>
+            <outline type="rss" text="🅰🅻🅴🆂🆂🅸🅾 / @AlessioUrban" title="🅰🅻🅴🆂🆂🅸🅾 / @AlessioUrban" xmlUrl="https://nitter.net/AlessioUrban/rss" htmlUrl="https://nitter.net/AlessioUrban"/>
+            <outline type="rss" text="Breaking News on Seeking Alpha" title="Breaking News on Seeking Alpha" xmlUrl="http://seekingalpha.com/market_currents.xml" htmlUrl="https://seekingalpha.com/news/all"/>
+            <outline type="rss" text="Associated Press" title="Associated Press" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC52X5wxOL_s5yw0dQk7NtgA" htmlUrl="https://www.youtube.com/channel/UC52X5wxOL_s5yw0dQk7NtgA"/>
+            <outline type="rss" text="Transcripts from Seeking Alpha" title="Transcripts from Seeking Alpha" xmlUrl="http://seekingalpha.com/sector/transcripts.xml" htmlUrl="https://seekingalpha.com"/>
+            <outline type="rss" text="EE Times Japan 最新記事一覧" title="EE Times Japan 最新記事一覧" xmlUrl="http://rss.itmedia.co.jp/rss/0.91/eetimes.xml" htmlUrl="https://eetimes.itmedia.co.jp/"/>
+            <outline type="rss" text="Wired" title="Wired" xmlUrl="http://feeds.wired.com/wired/index" htmlUrl="https://www.wired.com"/>
+            <outline type="rss" text="Breaking Market News / @breakingmkts" title="Breaking Market News / @breakingmkts" xmlUrl="https://nitter.net/breakingmkts/rss" htmlUrl="https://nitter.net/breakingmkts"/>
+            <outline type="rss" text="The Verge" title="The Verge" xmlUrl="http://www.theverge.com/rss/full.xml" htmlUrl="https://www.theverge.com"/>
+            <outline type="rss" text="あんこん / @UnconstrainedI" title="あんこん / @UnconstrainedI" xmlUrl="https://nitter.it/UnconstrainedI/rss" htmlUrl="https://nitter.it/UnconstrainedI"/>
+        </outline>
+        <outline text="Finance" title="Finance">
+            <outline type="rss" text="CNBC" title="CNBC" xmlUrl="http://www.newslookup.com/rss/business/cnbc.rss" htmlUrl="http://www.cnbc.com/"/>
+            <outline type="rss" text="OilPrice" title="OilPrice" xmlUrl="http://feeds.feedburner.com/oilpricecom" htmlUrl="https://oilprice.com/rss/main"/>
+            <outline type="rss" text="Nick Timiraos / @NickTimiraos" title="Nick Timiraos / @NickTimiraos" xmlUrl="https://nitter.it/NickTimiraos/rss" htmlUrl="https://nitter.it/NickTimiraos"/>
+            <outline type="rss" text="Global Market Intelligence &amp; Consulting | TrendForce" title="Global Market Intelligence &amp; Consulting | TrendForce" xmlUrl="https://www.trendforce.com/feed/Display.html" htmlUrl="https://www.trendforce.com"/>
+            <outline type="rss" text="DRAMeXchange RSS Feed" title="DRAMeXchange RSS Feed" xmlUrl="http://www.dramexchange.com/rss.xml" htmlUrl="https://www.dramexchange.com/"/>
+            <outline type="rss" text="ブルームバーグ 海外ニュース" title="ブルームバーグ 海外ニュース" xmlUrl="https://assets.wor.jp/rss/rdf/bloomberg/overseas.rdf" htmlUrl="https://www.bloomberg.co.jp/news/overseas"/>
+            <outline type="rss" text="WSJ.com: US Business" title="WSJ.com: US Business" xmlUrl="https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml" htmlUrl="https://wsj.com"/>
+            <outline type="rss" text="ZeroHedge News" title="ZeroHedge News" xmlUrl="http://feeds.feedburner.com/zerohedge/feed" htmlUrl="https://www.zerohedge.com"/>
+            <outline type="rss" text="ブルームバーグ マーケット" title="ブルームバーグ マーケット" xmlUrl="https://assets.wor.jp/rss/rdf/bloomberg/markets.rdf" htmlUrl="https://www.bloomberg.com/jp/markets"/>
+            <outline type="rss" text="International" title="International" xmlUrl="http://www.economist.com/rss/international_rss.xml" htmlUrl="https://www.economist.com/international"/>
+            <outline type="rss" text="United States" title="United States" xmlUrl="http://www.economist.com/feeds/print-sections/71/united-states.xml" htmlUrl="https://www.economist.com/united-states"/>
+            <outline type="rss" text="CFO" title="CFO" xmlUrl="http://ww2.cfo.com/feed/" htmlUrl="https://www.cfo.com"/>
+            <outline type="rss" text="Top News on Seeking Alpha" title="Top News on Seeking Alpha" xmlUrl="http://seekingalpha.com/news/top-news/feed" htmlUrl="https://seekingalpha.com/news/top-news"/>
+            <outline type="rss" text="Economic &amp; financial indicators" title="Economic &amp; financial indicators" xmlUrl="http://www.economist.com/rss/indicators_rss.xml" htmlUrl="https://www.economist.com/economic-and-financial-indicators"/>
+            <outline type="rss" text="JE$US / @WallStJesus" title="JE$US / @WallStJesus" xmlUrl="https://nitter.net/WallStJesus/rss" htmlUrl="https://nitter.net/WallStJesus"/>
+            <outline type="rss" text="Business" title="Business" xmlUrl="http://www.economist.com/rss/business_rss.xml" htmlUrl="https://www.economist.com/business"/>
+            <outline type="rss" text="Barron's / @barronsonline" title="Barron's / @barronsonline" xmlUrl="https://nitter.net/barronsonline/rss" htmlUrl="https://nitter.net/barronsonline"/>
+            <outline type="rss" text="AAII SentimentSurvey / @AAIISentiment" title="AAII SentimentSurvey / @AAIISentiment" xmlUrl="https://nitter.net/AAIISentiment/rss" htmlUrl="https://nitter.net/AAIISentiment"/>
+            <outline type="rss" text="ロイター 経済" title="ロイター 経済" xmlUrl="https://assets.wor.jp/rss/rdf/reuters/economy.rdf" htmlUrl="https://jp.reuters.com/economy/"/>
+            <outline type="rss" text="First Squawk / @FirstSquawk" title="First Squawk / @FirstSquawk" xmlUrl="https://nitter.it/FirstSquawk/rss" htmlUrl="https://nitter.it/FirstSquawk"/>
+            <outline type="rss" text="Market Overview" title="Market Overview" xmlUrl="http://www.investing.com/rss/market_overview.rss" htmlUrl="https://www.investing.com"/>
+            <outline type="rss" text="Ledge.ai" title="Ledge.ai" xmlUrl="https://ledge.ai/feed/" htmlUrl="https://ledge.ai"/>
+            <outline type="rss" text="Semiaccurate" title="Semiaccurate" xmlUrl="http://semiaccurate.com/feed/" htmlUrl="https://www.semiaccurate.com/"/>
+            <outline type="rss" text="Modular Money" title="Modular Money" xmlUrl="https://modularmoney.co/feed/" htmlUrl="https://modularmoney.co"/>
+            <outline type="rss" text="*Walter Bloomberg / @DeItaone" title="*Walter Bloomberg / @DeItaone" xmlUrl="https://nitter.net/DeItaone/rss" htmlUrl="https://nitter.net/DeItaone"/>
+            <outline type="rss" text="日本経済新聞" title="日本経済新聞" xmlUrl="https://rsshub.app/nikkei/index" htmlUrl="https://www.nikkei.com"/>
+            <outline type="rss" text="All Articles on Seeking Alpha" title="All Articles on Seeking Alpha" xmlUrl="http://seekingalpha.com/feed.xml" htmlUrl="https://seekingalpha.com"/>
+            <outline type="rss" text="あんこん / @UnconstrainedI" title="あんこん / @UnconstrainedI" xmlUrl="https://nitter.it/UnconstrainedI/rss" htmlUrl="https://nitter.it/UnconstrainedI"/>
+            <outline type="rss" text="zerohedge / @zerohedge" title="zerohedge / @zerohedge" xmlUrl="https://nitter.it/zerohedge/rss" htmlUrl="https://nitter.it/zerohedge"/>
+        </outline>
+    </body>
+</opml>

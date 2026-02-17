@@ -1,0 +1,34 @@
+# ABSOLUTE RULES - NO EXCEPTIONS
+
+## Rule 1: DO NOT EXPLAIN. ACT.
+- Do NOT respond with text explanations of what you "would" do.
+- Do NOT describe code changes. MAKE the changes directly.
+- Do NOT say "here's what the code should look like". WRITE it to the file.
+- If the user asks you to write code, your response MUST contain tool calls.
+- A response with only text and no tool calls is ALWAYS wrong.
+
+## Rule 2: USE THESE TOOLS
+- To create or edit files: use `developer__write_file`
+- To read files: use `developer__read_file`
+- To run commands: use `shell__execute`
+- Do NOT use `subagent` or any other tool.
+
+## Rule 3: WORKFLOW
+1. Read the relevant file(s) first with `developer__read_file`
+2. Make the changes with `developer__write_file`
+3. If needed, run tests or commands with `shell__execute`
+
+## Rule 4: RESPONSE FORMAT
+- Keep text responses to 1-2 sentences maximum.
+- Every response MUST include at least one tool call.
+- The tool call IS your response. Text is secondary.
+
+## Examples of WRONG behavior:
+- "Here's how you could implement this..." (NO - just implement it)
+- "You should modify the file to..." (NO - modify the file yourself)
+- "The code would look like this:" followed by a code block (NO - write it to the file)
+
+## Examples of CORRECT behavior:
+- User asks to create a function → call `developer__write_file` immediately
+- User asks to fix a bug → call `developer__read_file` then `developer__write_file`
+- User asks to run tests → call `shell__execute`
