@@ -1,0 +1,42 @@
+# RSS Feed Configuration
+feeds:
+  opml_file: "feedly_rss.opml"
+  timeout_seconds: 10
+  skip_feedly_proxy: true
+
+# Schedule Configuration
+schedule:
+  interval_hours: 12
+  time_window_hours: 12
+
+# LLM Configuration (Ollama)
+llm:
+  base_url: "${OLLAMA_BASE_URL}"
+  embedding_model: "nomic-embed-text"
+  dedup_threshold: 0.85
+
+# Deduplication Settings
+deduplication:
+  preferred_sources:
+    - "Reuters"
+    - "Bloomberg"
+    - "TechCrunch"
+    - "The Verge"
+
+# Email Configuration
+email:
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  sender_email: "${GMAIL_ADDRESS}"
+  sender_password: "${GMAIL_APP_PASSWORD}"
+  recipients:
+    - "${PERSONAL_EMAIL}"
+    - "${COMPANY_EMAIL}"
+  max_articles_per_email: 200
+
+# Output Configuration
+output:
+  save_html: true
+  html_dir: "./output"
+  log_file: "./logs/news_filter.log"
+  state_file: "./state/last_run.json"

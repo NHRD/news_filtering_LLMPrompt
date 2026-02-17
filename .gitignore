@@ -1,0 +1,30 @@
+# Environment variables (secrets)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project specific
+.codex_status
+output/
+logs/
+state/
+*.log
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/

@@ -1,0 +1,152 @@
+============================= test session starts ==============================
+platform linux -- Python 3.6.15, pytest-7.0.1, pluggy-1.0.0 -- /home/naohisaharada/.pyenv/versions/3.6.15/bin/python
+cachedir: .pytest_cache
+rootdir: /home/naohisaharada/Documents/news_filtering
+plugins: cov-4.0.0
+collecting ... collected 51 items
+
+tests/test_config.py::test_ut_008_1_load_config_yaml PASSED              [  1%]
+tests/test_config.py::test_ut_008_2_expand_env_vars PASSED               [  3%]
+tests/test_config.py::test_ut_008_3_handle_missing_file PASSED           [  5%]
+tests/test_config.py::test_ut_008_4_handle_missing_env_var PASSED        [  7%]
+tests/test_deduplicator.py::test_ut_004_1_remove_duplicate_urls PASSED   [  9%]
+tests/test_deduplicator.py::test_ut_004_2_keep_most_recent PASSED        [ 11%]
+tests/test_deduplicator.py::test_ut_004_3_handle_all_unique PASSED       [ 13%]
+tests/test_deduplicator.py::test_ut_005_1_cluster_similar_titles FAILED  [ 15%]
+tests/test_deduplicator.py::test_ut_005_2_keep_different_titles PASSED   [ 17%]
+tests/test_deduplicator.py::test_ut_005_3_prefer_preferred_source FAILED [ 19%]
+tests/test_deduplicator.py::test_ut_005_4_prefer_recent_if_no_preferred FAILED [ 21%]
+tests/test_deduplicator.py::test_ut_005_5_handle_ollama_timeout PASSED   [ 23%]
+tests/test_deduplicator.py::test_ut_005_6_handle_empty_list PASSED       [ 25%]
+tests/test_email_sender.py::test_ut_007_1_send_email_mocked PASSED       [ 27%]
+tests/test_email_sender.py::test_ut_007_2_handle_auth_failure PASSED     [ 29%]
+tests/test_email_sender.py::test_ut_007_3_handle_network_error_with_retries PASSED [ 31%]
+tests/test_email_sender.py::test_ut_007_4_multiple_recipients PASSED     [ 33%]
+tests/test_html_builder.py::test_ut_006_1_generate_valid_html PASSED     [ 35%]
+tests/test_html_builder.py::test_ut_006_2_group_by_category PASSED       [ 37%]
+tests/test_html_builder.py::test_ut_006_3_sort_by_date PASSED            [ 39%]
+tests/test_html_builder.py::test_ut_006_4_escape_html_in_title PASSED    [ 41%]
+tests/test_html_builder.py::test_ut_006_5_handle_empty_list FAILED       [ 43%]
+tests/test_html_builder.py::test_ut_006_6_respect_max_articles FAILED    [ 45%]
+tests/test_integration.py::test_it_001_1_fetch_real_like_and_filter_by_time PASSED [ 47%]
+tests/test_integration.py::test_it_001_2_state_persistence_across_runs FAILED [ 49%]
+tests/test_integration.py::test_it_002_1_filter_then_deduplicate PASSED  [ 50%]
+tests/test_integration.py::test_it_002_2_dedup_with_ollama_running PASSED [ 52%]
+tests/test_integration.py::test_it_003_1_build_html_from_deduped_articles PASSED [ 54%]
+tests/test_integration.py::test_it_004_1_build_and_send_mocked_smtp FAILED [ 56%]
+tests/test_integration.py::test_e2e_001_1_run_pipeline_dry_run PASSED    [ 58%]
+tests/test_integration.py::test_e2e_001_2_run_pipeline_full_with_mocked_email PASSED [ 60%]
+tests/test_integration.py::test_e2e_001_3_run_with_ollama_down_fallback PASSED [ 62%]
+tests/test_integration.py::test_e2e_002_1_dry_run_flag PASSED            [ 64%]
+tests/test_integration.py::test_e2e_002_2_fetch_only_flag PASSED         [ 66%]
+tests/test_integration.py::test_e2e_002_3_force_flag PASSED              [ 68%]
+tests/test_rss_fetcher.py::test_ut_001_1_parse_valid_opml PASSED         [ 70%]
+tests/test_rss_fetcher.py::test_ut_001_2_skip_feedly_proxy_urls PASSED   [ 72%]
+tests/test_rss_fetcher.py::test_ut_001_3_handle_duplicate_feed_urls PASSED [ 74%]
+tests/test_rss_fetcher.py::test_ut_001_4_handle_empty_opml PASSED        [ 76%]
+tests/test_rss_fetcher.py::test_ut_001_5_handle_malformed_opml PASSED    [ 78%]
+tests/test_rss_fetcher.py::test_ut_002_1_fetch_valid_rss_feed PASSED     [ 80%]
+tests/test_rss_fetcher.py::test_ut_002_2_handle_feed_timeout PASSED      [ 82%]
+tests/test_rss_fetcher.py::test_ut_002_3_handle_malformed_feed PASSED    [ 84%]
+tests/test_rss_fetcher.py::test_ut_002_4_extract_article_metadata PASSED [ 86%]
+tests/test_rss_fetcher.py::test_ut_002_5_handle_missing_date FAILED      [ 88%]
+tests/test_time_filter.py::test_ut_003_1_filter_recent_articles PASSED   [ 90%]
+tests/test_time_filter.py::test_ut_003_2_filter_old_articles PASSED      [ 92%]
+tests/test_time_filter.py::test_ut_003_3_handle_timezone_aware_dates PASSED [ 94%]
+tests/test_time_filter.py::test_ut_003_4_handle_timezone_naive_dates FAILED [ 96%]
+tests/test_time_filter.py::test_ut_003_5_handle_none_date FAILED         [ 98%]
+tests/test_time_filter.py::test_ut_003_6_use_last_run_for_recovery PASSED [100%]
+
+=================================== FAILURES ===================================
+_____________________ test_ut_005_1_cluster_similar_titles _____________________
+tests/test_deduplicator.py:87: in test_ut_005_1_cluster_similar_titles
+    assert len(deduped) == 1
+E   assert 2 == 1
+E     +2
+E     -1
+------------------------------ Captured log call -------------------------------
+WARNING  root:deduplicator.py:100 [Deduplicator] Ollama unavailable or embedding failure; fallback without stage2: __init__() got an unexpected keyword argument 'metric'
+____________________ test_ut_005_3_prefer_preferred_source _____________________
+tests/test_deduplicator.py:117: in test_ut_005_3_prefer_preferred_source
+    assert len(deduped) == 1
+E   assert 2 == 1
+E     +2
+E     -1
+------------------------------ Captured log call -------------------------------
+WARNING  root:deduplicator.py:100 [Deduplicator] Ollama unavailable or embedding failure; fallback without stage2: __init__() got an unexpected keyword argument 'metric'
+_________________ test_ut_005_4_prefer_recent_if_no_preferred __________________
+tests/test_deduplicator.py:129: in test_ut_005_4_prefer_recent_if_no_preferred
+    assert len(deduped) == 1
+E   assert 2 == 1
+E     +2
+E     -1
+------------------------------ Captured log call -------------------------------
+WARNING  root:deduplicator.py:100 [Deduplicator] Ollama unavailable or embedding failure; fallback without stage2: __init__() got an unexpected keyword argument 'metric'
+_______________________ test_ut_006_5_handle_empty_list ________________________
+tests/test_html_builder.py:49: in test_ut_006_5_handle_empty_list
+    assert "No articles" in html
+E   assert 'No articles' in '<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="UTF-8" />\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      max-width: 800px;\n      margin: 0 auto;\n      color: #202124;\n    }\n    .header {\n      background: #1a73e8;\n      color: white;\n      padding: 20px;\n    }\n    .category {\n      margin: 20px 0;\n    }\n    .category-title {\n      color: #1a73e8;\n      border-bottom: 2px solid #1a73e8;\n      padding-bottom: 6px;\n    }\n    .article {\n      margin: 10px 0;\n      padding: 10px;\n      background: #f8f9fa;\n      border-radius: 6px;\n    }\n    .article-title {\n      font-weight: bold;\n      margin-bottom: 4px;\n    }\n    .article-link {\n      color: #1a73e8;\n      text-decoration: none;\n    }\n    .article-meta {\n      font-size: 0.85em;\n      color: #666;\n    }\n    .footer {\n      font-size: 0.8em;\n      color: #666;\n      margin-top: 30px;\n      border-top: 1px solid #eee;\n      padding-top: 12px;\n    }\n  </style>\n</head>\n<body>\n  <div class="header">\n    <h1>News Digest</h1>\n    <p>2026-02-17 14:11 UTC - 2026-02-17 14:11 UTC</p>\n    <p>0 articles from 0 sources</p>\n  </div>\n\n  \n\n  <div class="footer">\n    <p>Generated by RSS News Filter | 2026-02-17 14:11 UTC</p>\n  </div>\n</body>\n</html>'
+______________________ test_ut_006_6_respect_max_articles ______________________
+tests/test_html_builder.py:57: in test_ut_006_6_respect_max_articles
+    assert html.count('class="article"') == 200
+E   assert 300 == 200
+E     +300
+E     -200
+_________________ test_it_001_2_state_persistence_across_runs __________________
+tests/test_integration.py:81: in test_it_001_2_state_persistence_across_runs
+    assert loaded == ts
+E   assert None == datetime.date....timezone.utc)
+E     +None
+E     -datetime.datetime(2026, 2, 17, 12, 0, tzinfo=datetime.timezone.utc)
+------------------------------ Captured log call -------------------------------
+WARNING  root:time_filter.py:35 [Time Filter] Failed to load state file: type object 'datetime.datetime' has no attribute 'fromisoformat'
+___________________ test_it_004_1_build_and_send_mocked_smtp ___________________
+tests/test_integration.py:158: in test_it_004_1_build_and_send_mocked_smtp
+    ok = send_email(cfg, "Subj", html)
+src/email_sender.py:28: in send_email
+    server.login(config.sender_email, config.sender_password)
+../../.pyenv/versions/3.6.15/lib/python3.6/smtplib.py:735: in login
+    raise last_exception
+../../.pyenv/versions/3.6.15/lib/python3.6/smtplib.py:726: in login
+    initial_response_ok=initial_response_ok)
+../../.pyenv/versions/3.6.15/lib/python3.6/smtplib.py:647: in auth
+    raise SMTPAuthenticationError(code, resp)
+E   smtplib.SMTPAuthenticationError: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials d2e1a72fcca58-824c6bb34b0sm13238056b3a.60 - gsmtp')
+------------------------------ Captured log call -------------------------------
+ERROR    root:email_sender.py:33 [Email Sender] Authentication failed
+______________________ test_ut_002_5_handle_missing_date _______________________
+tests/test_rss_fetcher.py:174: in test_ut_002_5_handle_missing_date
+    assert len(articles) == 1
+E   assert 0 == 1
+E     +0
+E     -1
+------------------------------ Captured log call -------------------------------
+WARNING  root:rss_fetcher.py:108 [RSS Fetcher] Skip article without valid published_date: NoDateFeed
+__________________ test_ut_003_4_handle_timezone_naive_dates ___________________
+tests/test_time_filter.py:49: in test_ut_003_4_handle_timezone_naive_dates
+    filtered, _ = filter_recent_articles(articles, time_window_hours=6, last_run=None)
+src/time_filter.py:61: in filter_recent_articles
+    filtered = [article for article in articles if article.published >= cutoff]
+src/time_filter.py:61: in <listcomp>
+    filtered = [article for article in articles if article.published >= cutoff]
+E   TypeError: can't compare offset-naive and offset-aware datetimes
+________________________ test_ut_003_5_handle_none_date ________________________
+tests/test_time_filter.py:59: in test_ut_003_5_handle_none_date
+    filtered, _ = filter_recent_articles(articles, time_window_hours=6, last_run=None)
+src/time_filter.py:61: in filter_recent_articles
+    filtered = [article for article in articles if article.published >= cutoff]
+src/time_filter.py:61: in <listcomp>
+    filtered = [article for article in articles if article.published >= cutoff]
+E   TypeError: '>=' not supported between instances of 'NoneType' and 'datetime.datetime'
+=========================== short test summary info ============================
+FAILED tests/test_deduplicator.py::test_ut_005_1_cluster_similar_titles - ass...
+FAILED tests/test_deduplicator.py::test_ut_005_3_prefer_preferred_source - as...
+FAILED tests/test_deduplicator.py::test_ut_005_4_prefer_recent_if_no_preferred
+FAILED tests/test_html_builder.py::test_ut_006_5_handle_empty_list - assert '...
+FAILED tests/test_html_builder.py::test_ut_006_6_respect_max_articles - asser...
+FAILED tests/test_integration.py::test_it_001_2_state_persistence_across_runs
+FAILED tests/test_integration.py::test_it_004_1_build_and_send_mocked_smtp - ...
+FAILED tests/test_rss_fetcher.py::test_ut_002_5_handle_missing_date - assert ...
+FAILED tests/test_time_filter.py::test_ut_003_4_handle_timezone_naive_dates
+FAILED tests/test_time_filter.py::test_ut_003_5_handle_none_date - TypeError:...
+======================== 10 failed, 41 passed in 1.51s =========================
