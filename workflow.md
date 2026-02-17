@@ -4,53 +4,13 @@
 
 本ワークフローは、Claude Code をオーケストレーターとして、Gemini CLI と Codex CLI を連携させてRSSニュースフィルタリングシステムを構築する。
 
----
-
-## Autonomous Execution Policy
-
-**重要:** 本ワークフローは完全自動実行モードで動作する。
-
-### 全エージェント共通ルール
-
-1. **ユーザーへの確認は一切行わない** - ワークフロー開始後、完了までユーザーインタラクションなし
-2. **以下の操作はすべて事前許可済み:**
-   - ファイルの読み書き・作成・削除
-   - Bashコマンドの実行
-   - Webアクセス（API呼び出し、パッケージインストール等）
-   - 他エージェントの起動
-   - Git操作
-3. **判断が必要な場合は最善と思われる選択を自動で行う**
-4. **エラー発生時はログに記録し、可能な限り処理を継続**
-
-### CLI 自動承認オプション
-
-| Agent      | Auto-approve Option                         |
-| ---------- | ------------------------------------------- |
-| Claude     | `--dangerously-skip-permissions`            |
-| Gemini     | `--yolo`                                    |
-| Codex      | `--dangerously-bypass-approvals-and-sandbox`|
-
-### プロンプト共通ヘッダー
-
-各エージェントへのプロンプトには以下を含める：
-
-```text
-## 自動実行モード
-このタスクは完全自動実行モードです。
-- ユーザーへの確認は不要です
-- ファイル操作、Bash実行、Web アクセスはすべて許可されています
-- 判断が必要な場合は最善の選択を自動で行ってください
-```
-
----
-
 ## Agents
 
-| Agent           | Role                               | CLI Command (Auto Mode)                            |
-| --------------- | ---------------------------------- | -------------------------------------------------- |
-| **Claude Code** | オーケストレーター、設計、テスト設計 | `claude --dangerously-skip-permissions`            |
-| **Gemini CLI**  | レビュー担当                        | `gemini --yolo -p`                                 |
-| **Codex CLI**   | 実装担当                           | `codex exec --dangerously-bypass-approvals-and-sandbox` |
+| Agent           | Role                             | CLI Command        |
+| --------------- | -------------------------------- | ------------------ |
+| **Claude Code** | オーケストレーター、設計、テスト設計 | `claude`           |
+| **Gemini CLI**  | レビュー担当                       | `gemini -p --yolo` |
+| **Codex CLI**   | 実装担当                          | `codex exec`       |
 
 ## State Management
 
@@ -93,7 +53,7 @@
 
 ### 完了条件
 
-- `architecture.md` が存在し、全セクション（Components 1-6）が記述されている
+- `architecture.md` が存在し、全体概要、データフロー、構成コンポーネント、その他情報ファイルおよびコーナーケース、エラーハンドリングの設計がセクションにわけられ記述されている
 
 ### 次ステップへのトリガー
 
@@ -117,12 +77,6 @@ jq '.current_step = 2 | .artifacts.architecture = "architecture.md"' workflow_st
 ```bash
 gemini --yolo -p "$(cat <<'EOF'
 あなたは設計レビュー担当です。
-
-## 自動実行モード
-このタスクは完全自動実行モードです。
-- ユーザーへの確認は不要です
-- ファイル操作、Bash実行、Webアクセスはすべて許可されています
-- 判断が必要な場合は最善の選択を自動で行ってください
 
 ## 現在のワークフローステップ
 Step 2: Architecture Review
@@ -194,14 +148,8 @@ jq '.current_step = 3 | .artifacts.architecture_review = "architecture_review.md
 ### Claude → Codex 起動コマンド
 
 ```bash
-codex exec --dangerously-bypass-approvals-and-sandbox "$(cat <<'EOF'
+codex exec "$(cat <<'EOF'
 あなたは実装担当です。
-
-## 自動実行モード
-このタスクは完全自動実行モードです。
-- ユーザーへの確認は不要です
-- ファイル操作、Bash実行、Webアクセスはすべて許可されています
-- 判断が必要な場合は最善の選択を自動で行ってください
 
 ## 現在のワークフローステップ
 Step 3: Implementation
@@ -287,14 +235,8 @@ jq '.current_step = 4 | .artifacts.implementation = "src/" | .artifacts.test_pla
 ### Claude → Codex 起動コマンド
 
 ```bash
-codex exec --dangerously-bypass-approvals-and-sandbox "$(cat <<'EOF'
+codex exec "$(cat <<'EOF'
 あなたはテスト実装・実行担当です。
-
-## 自動実行モード
-このタスクは完全自動実行モードです。
-- ユーザーへの確認は不要です
-- ファイル操作、Bash実行、Webアクセスはすべて許可されています
-- 判断が必要な場合は最善の選択を自動で行ってください
 
 ## 現在のワークフローステップ
 Step 4: Test Implementation & Execution
@@ -327,9 +269,7 @@ Step 4: Test Implementation & Execution
 ## 完了後のアクション
 テスト完了後、Gemini CLI を起動してレビューを依頼してください：
 
-gemini --yolo -p "Step 5のプロンプト（workflow.md 参照）"
-
-※ユーザーへの確認は不要です。自動で Gemini を起動してください。
+gemini --yolo -p "Step 5のプロンプト（下記参照）"
 EOF
 )"
 ```
@@ -361,12 +301,6 @@ jq '.current_step = 5 | .artifacts.test_results = "test_results.md"' workflow_st
 ```bash
 gemini --yolo -p "$(cat <<'EOF'
 あなたはテスト結果レビュー担当です。
-
-## 自動実行モード
-このタスクは完全自動実行モードです。
-- ユーザーへの確認は不要です
-- ファイル操作、Bash実行、Webアクセスはすべて許可されています
-- 判断が必要な場合は最善の選択を自動で行ってください
 
 ## 現在のワークフローステップ
 Step 5: Test Result Review
@@ -452,50 +386,34 @@ architecture.md    architecture_      src/*.py           tests/*.py         fina
 
 ## File Artifacts
 
-| Step | Created By | File                     | Description              |
-| ---- | ---------- | ------------------------ | ------------------------ |
-| 1    | Claude     | `architecture.md`        | システムアーキテクチャ設計 |
+| Step | Created By | File               | Description            |
+| ---- | ---------- | ------------------ | ---------------------- |
+| 1    | Claude     | `architecture.md`  | システムアーキテクチャ設計 |
 | 2    | Gemini     | `architecture_review.md` | アーキテクチャレビュー結果 |
-| 3    | Codex      | `src/__init__.py`        | パッケージ初期化          |
-| 3    | Codex      | `src/*.py`               | 実装コード                |
-| 3    | Codex      | `templates/email.html`   | HTMLメールテンプレート    |
-| 3    | Codex      | `requirements.txt`       | Python依存関係            |
-| 3    | Codex      | `config.yaml`            | 設定ファイル              |
-| 3    | Codex      | `.env.example`           | 環境変数テンプレート      |
-| 3    | Claude     | `test_plan.md`           | テスト設計書              |
-| 4    | Codex      | `tests/*.py`             | テストコード              |
-| 4    | Codex      | `test_results.md`        | テスト実行結果            |
-| 5    | Gemini     | `final_review.md`        | 最終レビュー結果          |
-| -    | System     | `workflow_state.json`    | ワークフロー状態管理      |
+| 3    | Codex      | `src/*.py`         | 実装コード              |
+| 3    | Codex      | `requirements.txt` | Python依存関係          |
+| 3    | Codex      | `config.yaml`      | 設定ファイル            |
+| 3    | Claude     | `test_plan.md`     | テスト設計書            |
+| 4    | Codex      | `tests/*.py`       | テストコード            |
+| 4    | Codex      | `test_results.md`  | テスト実行結果          |
+| 5    | Gemini     | `final_review.md`  | 最終レビュー結果        |
+| -    | System     | `workflow_state.json` | ワークフロー状態管理   |
 
 ---
 
 ## Error Handling
 
-### Agent 起動失敗時の自動リカバリー
+### Agent 起動失敗
 
 ```bash
-# タイムアウト設定（10分）、リトライ1回
-run_with_retry() {
-  local cmd="$1"
-  timeout 600 $cmd
-  if [ $? -eq 124 ]; then
-    echo "WARN: First attempt timed out, retrying..."
-    timeout 600 $cmd
-    if [ $? -eq 124 ]; then
-      echo "ERROR: Agent timed out after retry"
-      jq '.status = "error" | .error = "agent_timeout"' workflow_state.json > tmp.json && mv tmp.json workflow_state.json
-      return 1
-    fi
-  fi
-  return 0
-}
-
-# 使用例
-run_with_retry "gemini --yolo -p '...'"
+# タイムアウト設定（10分）
+timeout 600 gemini --yolo -p "..."
+if [ $? -eq 124 ]; then
+  echo "ERROR: Gemini CLI timed out"
+  jq '.status = "error" | .error = "gemini_timeout"' workflow_state.json > tmp.json && mv tmp.json workflow_state.json
+  exit 1
+fi
 ```
-
-**注意:** エラー発生時もユーザーへの確認は行わず、ログに記録して可能な限り継続する。
 
 ### レビューで Needs Revision の場合
 
@@ -515,20 +433,14 @@ run_with_retry "gemini --yolo -p '...'"
 
 ```bash
 # Step 1 から開始
-claude --dangerously-skip-permissions -p "workflow.md の Step 1 を実行してください"
+claude -p "workflow.md の Step 1 を実行してください"
 
 # 特定のステップから再開
-claude --dangerously-skip-permissions -p "workflow.md の Step 3 から再開してください。workflow_state.json を参照。"
+claude -p "workflow.md の Step 3 から再開してください。workflow_state.json を参照。"
 ```
 
 ### 自動実行（全ステップ）
 
 ```bash
-claude --dangerously-skip-permissions -p "workflow.md に従い、Step 1 から Step 5 まで自動で実行してください。各ステップの完了後、次のエージェントを起動し、最終レビュー結果をユーザーに報告してください。"
+claude -p "workflow.md に従い、Step 1 から Step 5 まで自動で実行してください。各ステップの完了後、次のエージェントを起動し、最終レビュー結果をユーザーに報告してください。"
 ```
-
-### 自動実行の前提条件
-
-- 各エージェントCLI（claude, gemini, codex）がインストール済み
-- 必要な認証設定が完了済み
-- Ollama が起動済み（LLM重複削除用）
