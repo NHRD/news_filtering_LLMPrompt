@@ -52,6 +52,6 @@ def test_ut_006_5_handle_empty_list():
 def test_ut_006_6_respect_max_articles():
     articles = [_article(f"Article {i}") for i in range(300)]
 
-    html = build_email_html(articles)
+    html = build_email_html(articles, max_articles=200)
 
     assert html.count('class="article"') == 200

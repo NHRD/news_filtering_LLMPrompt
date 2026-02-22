@@ -3,6 +3,7 @@
 import argparse
 import logging
 from datetime import timezone
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 try:
@@ -39,7 +40,9 @@ def _setup_logging(log_file: str) -> None:
         format="%(asctime)s %(levelname)s %(message)s",
         handlers=[
             logging.StreamHandler(),
-            logging.FileHandler(path, encoding="utf-8"),
+            RotatingFileHandler(
+                path, maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"
+            ),
         ],
     )
 

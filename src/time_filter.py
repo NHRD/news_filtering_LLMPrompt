@@ -58,6 +58,16 @@ def filter_recent_articles(
     force: bool = False,
 ) -> Tuple[List[Article], datetime]:
     cutoff = compute_cutoff(time_window_hours=time_window_hours, last_run=last_run, force=force)
-    filtered = [article for article in articles if article.published >= cutoff]
+    filtered = []
+    for article in articles:
+        if article.published is None:
+            logging.warning("[Time Filter] Skipping article without date: %s", article.title)
+            continue
+        pub = article.published
+        if pub.tzinfo is None:
+            pub = pub.replace(tzinfo=timezone.utc)
+            logging.warning("[Time Filter] Assuming UTC for naive datetime: %s", article.title)
+        if pub >= cutoff:
+            filtered.append(article)
     logging.info("[Time Filter] %s articles within cutoff %s", len(filtered), cutoff.isoformat())
     return filtered, cutoff

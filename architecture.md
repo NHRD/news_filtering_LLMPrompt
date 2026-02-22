@@ -32,7 +32,7 @@ This document defines the system architecture for the RSS News Filtering System.
                                                          v
                                                +-------------------+
                                                |  LLM Deduplicator |
-                                               |  (Ollama/Llama)   |
+                                               |  (Ollama/nomic)   |
                                                +---------+---------+
                                                          |
                                                          v
@@ -121,6 +121,7 @@ recent_articles = [a for a in articles if a.published >= cutoff]
 
 **State Persistence (Failure Recovery):**
 - Save timestamp of last successful run to `state/last_run.json`
+- **Update timing:** State is updated only after the entire pipeline completes successfully (after email is sent or after dry-run HTML is saved). If any step fails, the state is NOT updated, ensuring the next run re-processes missed articles.
 - On next run, use `max(last_run_timestamp, now - 12h)` as cutoff
 - This ensures no articles are missed if a run fails
 
@@ -134,7 +135,13 @@ recent_articles = [a for a in articles if a.published >= cutoff]
 
 **Purpose:** Remove duplicate/similar articles that cover the same news story
 
-**Recommended Model:** `nomic-embed-text` (dedicated embedding model, faster and more efficient than general-purpose LLMs like `llama3.2`)
+**Recommended Model:** `nomic-embed-text` (dedicated embedding model, faster and more efficient than general-purpose LLMs)
+
+**Failure Behavior:**
+- **Ollama unavailable:** Controlled by `on_dedup_failure` config setting:
+  - `send_anyway` (default): Skip deduplication and proceed with all articles. Log WARNING.
+  - `fail`: Abort pipeline with exit code 1. Log ERROR.
+- **Model not found:** Always abort with exit code 1 and log CRITICAL error. This indicates a misconfiguration that requires human intervention.
 
 **Two-Stage Deduplication Process:**
 
@@ -146,9 +153,9 @@ recent_articles = [a for a in articles if a.published >= cutoff]
 1. Generate embeddings for each article title using Ollama
 2. Use **Agglomerative Clustering** with cosine distance
 3. Distance threshold: configurable (default: 0.15, equivalent to 0.85 similarity)
-4. Select one representative from each cluster:
-   - Prefer articles from `preferred_sources` (if configured)
-   - Otherwise, select the most recent article
+4. Select one representative from each cluster with the following priority:
+   1. If any articles in the cluster are from `preferred_sources`, select the most recent one among those.
+   2. Otherwise, select the most recent article in the cluster.
 
 **Ollama Integration:**
 ```python
@@ -242,6 +249,16 @@ def deduplicate_articles(articles: list[Article], config: dict) -> list[Article]
 </html>
 ```
 
+**Max Articles Handling:**
+- When the number of articles exceeds `max_articles_per_email`, truncate to the most recent N articles.
+- HTML Builder accepts a `max_articles` parameter to enforce this limit.
+
+**Date Formatting:**
+- All dates displayed in the email are formatted as `YYYY-MM-DD HH:MM UTC` by the HTML Builder using `strftime('%Y-%m-%d %H:%M UTC')`.
+
+**Empty Article List:**
+- When no articles remain after filtering/dedup, render a "No articles found" message instead of empty content.
+
 **Grouping:**
 - Group articles by OPML category (Tech news, sub, Finance)
 - Within each category, sort by publication date (newest first)
@@ -331,6 +348,7 @@ llm:
 
 # Deduplication Settings
 deduplication:
+  on_dedup_failure: "send_anyway"  # "send_anyway" or "fail"
   preferred_sources:  # Articles from these sources are preferred when selecting cluster representatives
     - "Reuters"
     - "Bloomberg"
@@ -375,8 +393,8 @@ OLLAMA_BASE_URL=http://localhost:11434
 | RSS Fetcher | Feed parse error | Log warning, continue |
 | RSS Fetcher | No articles found | Log info, continue |
 | Time Filter | Invalid date | Skip article, log warning |
-| LLM Deduplicator | Ollama unavailable | Fallback: skip dedup, use all articles |
-| LLM Deduplicator | Model not found | Fallback or exit with error |
+| LLM Deduplicator | Ollama unavailable | Configurable: skip dedup (`send_anyway`) or abort (`fail`) |
+| LLM Deduplicator | Model not found | Abort with exit code 1, log CRITICAL |
 | HTML Builder | Template error | Exit with error |
 | Email Sender | Auth failure | Exit with error, send alert if possible |
 | Email Sender | Network error | Retry 3 times with exponential backoff |
@@ -389,6 +407,11 @@ OLLAMA_BASE_URL=http://localhost:11434
 - `INFO`: Normal operation (fetching feeds, article counts)
 - `WARNING`: Recoverable errors (feed timeout, skipped articles)
 - `ERROR`: Critical failures (email auth, Ollama down)
+- `CRITICAL`: Configuration errors requiring human intervention (model not found)
+
+**Log Rotation:**
+- Use Python's `RotatingFileHandler` with `maxBytes=10MB` and `backupCount=5`
+- This prevents unlimited log growth while retaining recent history
 
 **Log Format:**
 ```
@@ -509,7 +532,7 @@ numpy>=1.24.0
 3. **Verify Ollama is running:**
    ```bash
    ollama list
-   # Should show available models including llama3.2
+   # Should show available models including nomic-embed-text
    ```
 
 4. **Test the pipeline:**

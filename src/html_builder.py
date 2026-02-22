@@ -29,8 +29,11 @@ def _group_articles(articles):
 def build_email_html(
     articles,
     template_path="templates/email.html",
+    max_articles=0,
 ):
-    # type: (List[Article], str) -> str
+    # type: (List[Article], str, int) -> str
+    if max_articles > 0:
+        articles = articles[:max_articles]
     template_file = Path(template_path)
     env = Environment(
         loader=FileSystemLoader(str(template_file.parent)),

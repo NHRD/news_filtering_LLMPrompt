@@ -96,8 +96,21 @@ def deduplicate_articles(articles, config):
         )
         logging.info("[Deduplicator] Stage 2 title clustering: %s -> %s", len(stage1), len(stage2))
         return stage2
+    except requests.exceptions.HTTPError as exc:
+        if exc.response is not None and exc.response.status_code == 404:
+            logging.critical("[Deduplicator] Model not found: %s. Aborting.", config.llm.embedding_model)
+            raise SystemExit(1)
+        return _handle_dedup_failure(config, stage1, exc)
     except Exception as exc:
-        logging.warning("[Deduplicator] Ollama unavailable or embedding failure; fallback without stage2: %s", exc)
-        # Architecture fallback: skip LLM dedup and continue.
-        stage1.sort(key=lambda a: a.published, reverse=True)
-        return stage1
+        return _handle_dedup_failure(config, stage1, exc)
+
+
+def _handle_dedup_failure(config, stage1, exc):
+    # type: (AppConfig, List[Article], Exception) -> List[Article]
+    on_failure = config.deduplication.on_dedup_failure
+    if on_failure == "fail":
+        logging.error("[Deduplicator] Dedup failure and on_dedup_failure=fail; aborting: %s", exc)
+        raise SystemExit(1)
+    logging.warning("[Deduplicator] Ollama unavailable; fallback without stage2 (on_dedup_failure=send_anyway): %s", exc)
+    stage1.sort(key=lambda a: a.published, reverse=True)
+    return stage1

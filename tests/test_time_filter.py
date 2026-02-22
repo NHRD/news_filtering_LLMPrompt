@@ -49,7 +49,7 @@ def test_ut_003_4_handle_timezone_naive_dates(monkeypatch, caplog):
     filtered, _ = filter_recent_articles(articles, time_window_hours=6, last_run=None)
 
     assert len(filtered) == 1
-    assert "assumed UTC" in caplog.text
+    assert "Assuming UTC" in caplog.text
 
 
 def test_ut_003_5_handle_none_date(monkeypatch, caplog):
@@ -59,7 +59,7 @@ def test_ut_003_5_handle_none_date(monkeypatch, caplog):
     filtered, _ = filter_recent_articles(articles, time_window_hours=6, last_run=None)
 
     assert filtered == []
-    assert "None" in caplog.text or "missing" in caplog.text.lower()
+    assert "Skipping article without date" in caplog.text
 
 
 def test_ut_003_6_use_last_run_for_recovery(monkeypatch):

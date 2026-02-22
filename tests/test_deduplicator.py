@@ -1,4 +1,8 @@
 from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
+
+import pytest
+import requests
 
 from src import Article
 from src.config import (
@@ -26,7 +30,7 @@ def _config(preferred_sources=None, threshold=0.85):
         feeds=FeedConfig(opml_file="feedly_rss.opml", timeout_seconds=10, skip_feedly_proxy=True),
         schedule=ScheduleConfig(interval_hours=12, time_window_hours=12),
         llm=LLMConfig(base_url="http://localhost:11434", embedding_model="nomic-embed-text", dedup_threshold=threshold),
-        deduplication=DeduplicationConfig(preferred_sources=preferred_sources or []),
+        deduplication=DeduplicationConfig(on_dedup_failure="send_anyway", preferred_sources=preferred_sources or []),
         email=EmailConfig(
             smtp_server="smtp.gmail.com",
             smtp_port=587,
@@ -148,3 +152,40 @@ def test_ut_005_6_handle_empty_list():
     deduped = deduplicate_articles([], _config())
 
     assert deduped == []
+
+
+def test_ut_005_7_on_dedup_failure_fail(monkeypatch):
+    articles = [_article("a", "https://example.com/1"), _article("b", "https://example.com/2")]
+
+    monkeypatch.setattr("src.deduplicator._get_embedding", lambda *args, **kwargs: (_ for _ in ()).throw(ConnectionError("down")))
+
+    cfg = AppConfig(
+        feeds=FeedConfig(opml_file="feedly_rss.opml", timeout_seconds=10, skip_feedly_proxy=True),
+        schedule=ScheduleConfig(interval_hours=12, time_window_hours=12),
+        llm=LLMConfig(base_url="http://localhost:11434", embedding_model="nomic-embed-text", dedup_threshold=0.85),
+        deduplication=DeduplicationConfig(on_dedup_failure="fail", preferred_sources=[]),
+        email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),
+        output=OutputConfig(True, "./output", "./logs/x.log", "./state/x.json"),
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        deduplicate_articles(articles, cfg)
+    assert exc_info.value.code == 1
+
+
+def test_ut_005_8_model_not_found(monkeypatch):
+    articles = [_article("a", "https://example.com/1"), _article("b", "https://example.com/2")]
+
+    mock_response = MagicMock()
+    mock_response.status_code = 404
+
+    def raise_404(*args, **kwargs):
+        exc = requests.exceptions.HTTPError(response=mock_response)
+        exc.response = mock_response
+        raise exc
+
+    monkeypatch.setattr("src.deduplicator._get_embedding", raise_404)
+
+    with pytest.raises(SystemExit) as exc_info:
+        deduplicate_articles(articles, _config())
+    assert exc_info.value.code == 1

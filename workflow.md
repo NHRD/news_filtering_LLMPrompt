@@ -115,7 +115,7 @@ EOF
 - `architecture_review.md` が存在
 - 判定（Approved / Needs Revision）が明記されている
 
-### Gemini → Claude フィードバック
+### Gemini → Codex フィードバック
 
 Gemini は処理完了後、以下を stdout に出力：
 
@@ -124,14 +124,14 @@ REVIEW_COMPLETE: architecture_review.md
 VERDICT: Approved|Needs Revision
 ```
 
-### Claude の後処理
+### Codex の後処理
 
 1. `architecture_review.md` を読み込み
 2. Needs Revision の場合: `architecture.md` を更新（1回のみ）
 3. `workflow_state.json` を更新
 
 ```bash
-# Claude が architecture を更新後
+# Codex が architecture を更新後
 jq '.current_step = 3 | .artifacts.architecture_review = "architecture_review.md"' workflow_state.json > tmp.json && mv tmp.json workflow_state.json
 ```
 

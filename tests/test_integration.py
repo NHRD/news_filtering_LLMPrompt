@@ -23,7 +23,7 @@ def _config(tmp_path):
         feeds=FeedConfig(opml_file=str(tmp_path / "feeds.opml"), timeout_seconds=1, skip_feedly_proxy=True),
         schedule=ScheduleConfig(interval_hours=12, time_window_hours=12),
         llm=LLMConfig(base_url="http://localhost:11434", embedding_model="nomic-embed-text", dedup_threshold=0.85),
-        deduplication=DeduplicationConfig(preferred_sources=["Reuters"]),
+        deduplication=DeduplicationConfig(on_dedup_failure="send_anyway", preferred_sources=["Reuters"]),
         email=EmailConfig(
             smtp_server="smtp.gmail.com",
             smtp_port=587,
@@ -42,6 +42,9 @@ def _config(tmp_path):
 
 
 def test_it_001_1_fetch_real_like_and_filter_by_time(tmp_path, monkeypatch):
+    fixed_now = datetime(2026, 2, 17, 12, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr("src.time_filter.now_utc", lambda: fixed_now)
+
     opml = tmp_path / "feeds.opml"
     opml.write_text(
         """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -93,7 +96,7 @@ def test_it_002_1_filter_then_deduplicate(monkeypatch):
         feeds=FeedConfig("feedly_rss.opml", 10, True),
         schedule=ScheduleConfig(12, 12),
         llm=LLMConfig("http://localhost:11434", "nomic-embed-text", 0.85),
-        deduplication=DeduplicationConfig([]),
+        deduplication=DeduplicationConfig("send_anyway", []),
         email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),
         output=OutputConfig(True, "./output", "./logs/x.log", "./state/x.json"),
     )
@@ -120,7 +123,7 @@ def test_it_002_2_dedup_with_ollama_running(monkeypatch):
         feeds=FeedConfig("feedly_rss.opml", 10, True),
         schedule=ScheduleConfig(12, 12),
         llm=LLMConfig("http://localhost:11434", "nomic-embed-text", 0.85),
-        deduplication=DeduplicationConfig([]),
+        deduplication=DeduplicationConfig("send_anyway", []),
         email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),
         output=OutputConfig(True, "./output", "./logs/x.log", "./state/x.json"),
     )
@@ -142,20 +145,22 @@ def test_it_003_1_build_html_from_deduped_articles():
 
 
 def test_it_004_1_build_and_send_mocked_smtp(monkeypatch):
+    html = build_email_html(
+        [Article("A", "https://example.com/1", datetime(2026, 2, 17, 12, 0, tzinfo=timezone.utc), "Reuters", "Finance")]
+    )
+
     sent = {"ok": False}
 
     def fake_send(config, subject, html_body):
         sent["ok"] = True
         return True
 
-    monkeypatch.setattr("src.email_sender.send_email", fake_send)
-
-    html = build_email_html(
-        [Article("A", "https://example.com/1", datetime(2026, 2, 17, 12, 0, tzinfo=timezone.utc), "Reuters", "Finance")]
-    )
+    # Patch the module-level reference so the imported send_email is replaced
+    import src.email_sender
+    monkeypatch.setattr(src.email_sender, "send_email", fake_send)
 
     cfg = EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200)
-    ok = send_email(cfg, "Subj", html)
+    ok = src.email_sender.send_email(cfg, "Subj", html)
 
     assert ok is True
 
@@ -183,6 +188,8 @@ def test_e2e_001_1_run_pipeline_dry_run(monkeypatch, tmp_path):
 def test_e2e_001_2_run_pipeline_full_with_mocked_email(monkeypatch, tmp_path):
     cfg = _config(tmp_path)
     base_time = datetime(2026, 2, 17, 12, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr("src.time_filter.now_utc", lambda: base_time)
+    monkeypatch.setattr("src.main.now_utc", lambda: base_time)
 
     monkeypatch.setattr("src.main.parse_opml", lambda *args, **kwargs: [FeedSource("u", "n", "Tech")])
     monkeypatch.setattr(

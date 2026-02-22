@@ -1,37 +1,47 @@
 # Architecture Review
 
-This document provides a review of the `architecture.md` file based on the reviewer role defined in `agent_roles.md`.
-
-## 1. Discovered Issues
-
-### Contradictions and Ambiguities
-- **Configuration Sources:** The design specifies both a `config.yaml` file and `.env` variables. The relationship and override priority between these two sources are not defined, which could lead to confusion during deployment and debugging.
-- **LLM Model Choice:** The document suggests using a general-purpose LLM like `llama3.2` for generating embeddings. This is inefficient. Dedicated embedding models (like `nomic-embed-text`, which is mentioned as an alternative) are significantly faster and better suited for this task. The design should strongly recommend a dedicated embedding model.
-- **File Naming:** The document refers to itself as `workflow.md` in the file structure section, but the filename is `architecture.md`. The file structure also lists `design.md`, creating confusion about which document is canonical.
-- **HTML Template Location:** The HTML for the email is embedded directly in the design document, but the proposed file structure includes a `templates/email.html` file. The design should be consistent and recommend using the external template file.
-- **Deduplication Logic:** The design states it will deduplicate based on "Same URL (exact match)" and title similarity, but the provided code examples and primary description focus only on title-based embedding similarity. The exact sequence of deduplication steps is not clear.
-
-### Missing Edge Cases and Failure Modes
-- **Failed Run Recovery:** The system is scheduled to run every 12 hours and process data from the last 12 hours. If a run fails, the articles from that 12-hour window will be permanently missed. There is no mechanism to handle this data gap (e.g., by saving the timestamp of the last successful run).
-- **LLM Output Quality:** The error handling for the Ollama service covers availability but not data integrity. The system does not account for the possibility of the LLM returning malformed or garbage embeddings, which could corrupt the deduplication process.
-- **Timezone Ambiguity:** The design mentions normalizing dates to UTC but does not specify how to handle articles that have a publication date without any timezone information. Assuming a default timezone can lead to incorrect filtering.
-- **Email Size Limit:** The workflow does not consider the case where an unusually high number of unique articles could result in an extremely large HTML email. This might cause issues with email clients or spam filters.
-
-## 2. Improvement Suggestions
-
-1.  **Clarify Configuration:** Explicitly state the configuration loading priority. A common and effective pattern is: `.env` file loads into environment -> `config.yaml` is read -> environment variables (if present) override YAML values.
-2.  **Optimize LLM Usage:** Officially recommend a dedicated, efficient embedding model (e.g., `nomic-embed-text`) as the default for the deduplication task. The use of a large chat model like `llama3.2` should be noted as a possible but inefficient alternative.
-3.  **Implement State Persistence:** To prevent data loss from failed runs, the system should save the timestamp of the last successfully processed article or the timestamp of the last successful run. The next run should use this timestamp as the starting point for the time window, ensuring no articles are missed.
-4.  **Refine Deduplication Strategy:** Define a clear, multi-stage deduplication process:
-    -   **Step 1:** Remove articles with identical `link` values, keeping the most recent one.
-    -   **Step 2:** For the remaining articles, perform title-based similarity clustering using embeddings.
-5.  **Specify Clustering Algorithm:** For the embedding-based deduplication, specify the clustering algorithm. For example: "Use Agglomerative Clustering with cosine similarity and a distance threshold defined in the configuration."
-6.  **Add Configuration for Preferred Sources:** To resolve ambiguity in which article to select from a duplicate cluster, add a `preferred_sources` list to the configuration file. The selection logic should be: "Select the newest article, unless another article in the cluster is from a preferred source."
-7.  **Add a Hard Limit:** To prevent oversized emails, introduce a configurable `max_articles_per_email` limit in `config.yaml`. If the number of articles exceeds this limit, the system could either truncate the list or send a warning instead of the full digest.
-8.  **Formalize Timezone Handling:** Specify the policy for timezone-naive dates. A safe default is to assume UTC but log a warning. E.g., "If `published_parsed` lacks timezone info, assume UTC and log a `WARNING`."
-
-## 3. Verdict
-
+## 判定
 **Needs Revision**
 
-The architecture is a solid foundation but requires revisions to address the identified ambiguities and missing edge cases before implementation begins. The proposed improvements will make the system more robust, efficient, and reliable.
+## 総評
+全体として、設計は包括的でよく考えられています。コンポーネントの責任分担、設定管理、エラー処理の基本戦略が明確に定義されています。
+
+しかし、実装を開始する前に、いくつかの曖昧な点、未定義のエッジケース、および潜在的なリスクについて明確化が必要です。以下の問題点を修正することで、より堅牢で予測可能なシステムになります。
+
+##発見した問題点
+
+1.  **曖昧なエラー処理:**
+    *   Ollama（LLM）が利用できない場合のエラー処理として「重複排除をスキップする」とありますが、これにより品質の低い（冗長な）メールが送信される可能性があります。プロセスを完全に停止させる方が望ましい場合もあり、この動作は設定可能にすべきか検討が必要です。
+    *   `LLM Deduplicator`の "Model not found" エラーに対するアクションが「フォールバックまたはエラーで終了」と曖昧です。具体的な動作を定義する必要があります。
+
+2.  **未定義のエッジケース:**
+    *   **状態の永続性:** `state/last_run.json` はプロセスのどの時点で更新されますか？もしメール送信が失敗した場合、`last_run.json` が更新されないと、次回の実行で同じ記事が再処理され、重複して送信される可能性があります。状態は、全プロセスが正常に完了した後にのみ更新するのが安全です。
+    *   **メールの最大記事数:** `config.yaml` の `max_articles_per_email` を超えた場合、どのような動作になりますか？（リストを切り捨てる、複数のメールを送信する、エラーで停止するなど）。この動作が定義されていません。
+    *   **重複排除の優先順位:** 重複記事クラスターから代表を選ぶ際、「`preferred_sources` を優先し、それ以外の場合は最新の記事を選択する」とありますが、優先順位が明確ではありません。「1. `preferred_sources` 内で最新の記事、2. それ以外で最新の記事」のように、選択ロジックをより厳密に定義すべきです。
+
+3.  **潜在的なパフォーマンス問題:**
+    *   各記事のタイトル埋め込みを、ループ内で一つずつ逐次的に生成しています (`embeddings = [get_embedding(a.title, ...) for a in unique_by_url]`)。記事数が多い場合、Ollama APIへの逐次リクエストがボトルネックになる可能性があります。バッチ処理が可能かどうか調査すべきです。
+
+4.  **軽微な矛盾と欠落:**
+    *   `LLM Deduplicator` のセクションタイトルでは `Llama` が言及されていますが、本文では `nomic-embed-text` が推奨されており、一貫性がありません。
+    *   ログファイル (`news_filter.log`) のローテーション戦略がありません。ログが無限に増え続ける可能性があります。
+    *   HTMLテンプレートに表示される日付 (`{{published}}`) のフォーマットが定義されていません。表示形式を統一するために、`html_builder`側で明示的にフォーマットすべきです。
+
+## 改善提案
+
+1.  **エラー処理の明確化:**
+    *   `config.yaml` に `on_dedup_failure: 'send_anyway' | 'fail'` のような設定項目を追加し、LLM利用不可時の動作（冗長なメールを送るか、プロセスを停止するか）を選択できるようにします。
+    *   "Model not found" 時は、明確に「エラーで終了し、CRITICALレベルのログを記録する」と定義します。
+
+2.  **エッジケースの定義:**
+    *   `state/last_run.json` は、メール送信が成功した直後に更新するように処理フローを定義してください。
+    *   `max_articles_per_email` を超過した場合の動作を定義してください（例：「最も新しい記事から`max_articles_per_email`件を送信し、残りは破棄する。その旨をメールのフッターに記載する」）。
+    *   重複排除の代表選択ロジックを「クラスター内で`preferred_sources`に含まれる記事があれば、その中で最新のものを選択。なければ、クラスター全体で最新の記事を選択する」のように具体的に記述してください。
+
+3.  **パフォーマンスの改善:**
+    *   Ollamaの `api/embeddings` がバッチリクエストをサポートしているか確認し、可能であればリクエストをまとめて送信するように実装を修正します。これにより、HTTPリクエストのオーバーヘッドが削減されます。
+
+4.  **ドキュメントと実装の修正:**
+    *   `architecture.md` の記述を推奨モデルである `nomic-embed-text` に統一します。
+    *   `logging` の設定に `logrotate` やPythonの `RotatingFileHandler` を利用したログローテーション戦略について追記します。
+    *   `html_builder` の責務として、「日付を指定されたタイムゾーンとフォーマット（例: `YYYY-MM-DD HH:MM TZZ`）で文字列化する」ことを明記します。

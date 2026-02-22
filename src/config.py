@@ -30,6 +30,7 @@ class LLMConfig(NamedTuple):
 
 
 class DeduplicationConfig(NamedTuple):
+    on_dedup_failure: str  # "send_anyway" or "fail"
     preferred_sources: List[str]
 
 
@@ -109,6 +110,7 @@ def load_config(path: str = "config.yaml") -> AppConfig:
             dedup_threshold=float(llm.get("dedup_threshold", 0.85)),
         ),
         deduplication=DeduplicationConfig(
+            on_dedup_failure=dedup.get("on_dedup_failure", "send_anyway"),
             preferred_sources=list(dedup.get("preferred_sources", [])),
         ),
         email=EmailConfig(
