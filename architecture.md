@@ -120,10 +120,13 @@ recent_articles = [a for a in articles if a.published >= cutoff]
 - **Timezone-naive dates:** If `published_parsed` lacks timezone info, assume UTC and log WARNING
 
 **State Persistence (Failure Recovery):**
-- Save timestamp of last successful run to `state/last_run.json`
-- **Update timing:** State is updated only after the entire pipeline completes successfully (after email is sent or after dry-run HTML is saved). If any step fails, the state is NOT updated, ensuring the next run re-processes missed articles.
-- On next run, use `max(last_run_timestamp, now - 12h)` as cutoff
-- This ensures no articles are missed if a run fails
+- Save timestamp of last successful run to `state/last_run.json`.
+- **Update Timing:** The `state/last_run.json` file is updated with the current timestamp **only after** the entire pipeline has completed successfully. A successful completion means either:
+  - The news summary email has been sent without errors.
+  - The `--dry-run` option was used and the HTML file was saved successfully.
+- If any step in the pipeline fails (including network errors, LLM failures, etc.), the state file **will not** be updated.
+- On the next run, the system will use the older timestamp from the state file, ensuring that any articles from the failed run's time window are re-processed and not missed.
+- The cutoff for new articles is calculated as `max(last_run_timestamp, now - 12h)`.
 
 ---
 
@@ -138,10 +141,17 @@ recent_articles = [a for a in articles if a.published >= cutoff]
 **Recommended Model:** `nomic-embed-text` (dedicated embedding model, faster and more efficient than general-purpose LLMs)
 
 **Failure Behavior:**
-- **Ollama unavailable:** Controlled by `on_dedup_failure` config setting:
-  - `send_anyway` (default): Skip deduplication and proceed with all articles. Log WARNING.
-  - `fail`: Abort pipeline with exit code 1. Log ERROR.
-- **Model not found:** Always abort with exit code 1 and log CRITICAL error. This indicates a misconfiguration that requires human intervention.
+- **Ollama unavailable:**
+  1. Abort normal article processing.
+  2. Generate an HTML email body containing an error message (e.g., "Failed to connect to Ollama for deduplication.").
+  3. Send this error notification email to all recipients.
+  4. Log an ERROR and terminate the process with a non-zero exit code.
+  5. The `state/last_run.json` file **is not** updated to ensure the time window is re-processed on the next run.
+- **Model not found:**
+  1. This is a critical configuration error.
+  2. Generate and send an email notification stating that the configured model is missing.
+  3. Log a CRITICAL error and terminate the process with a non-zero exit code.
+  4. The `state/last_run.json` file **is not** updated.
 
 **Two-Stage Deduplication Process:**
 
@@ -150,12 +160,14 @@ recent_articles = [a for a in articles if a.published >= cutoff]
 - Keep the most recent one (by `published` date)
 
 #### Stage 2: Title Similarity Clustering
-1. Generate embeddings for each article title using Ollama
-2. Use **Agglomerative Clustering** with cosine distance
-3. Distance threshold: configurable (default: 0.15, equivalent to 0.85 similarity)
-4. Select one representative from each cluster with the following priority:
-   1. If any articles in the cluster are from `preferred_sources`, select the most recent one among those.
-   2. Otherwise, select the most recent article in the cluster.
+1. Generate embeddings for each article title using Ollama.
+2. Use **Agglomerative Clustering** with cosine distance.
+3. Distance threshold: configurable (default: 0.15, equivalent to 0.85 similarity).
+4. Select one representative article from each cluster using the following strictly defined logic:
+   - **If** the cluster contains one or more articles from `preferred_sources`:
+     - Select the **most recent** article *from among the preferred sources only*.
+   - **Else** (the cluster contains no articles from preferred sources):
+     - Select the **most recent** article *from the entire cluster*.
 
 **Ollama Integration:**
 ```python
@@ -250,8 +262,9 @@ def deduplicate_articles(articles: list[Article], config: dict) -> list[Article]
 ```
 
 **Max Articles Handling:**
-- When the number of articles exceeds `max_articles_per_email`, truncate to the most recent N articles.
-- HTML Builder accepts a `max_articles` parameter to enforce this limit.
+- To prevent overly large emails, the number of articles is limited by the `max_articles_per_email` setting in `config.yaml`.
+- If the total number of unique articles exceeds this limit, the list is truncated to include only the **most recent** N articles, where N is `max_articles_per_email`.
+- When truncation occurs, a notification will be added to the email's footer. For example: "Showing the 200 most recent articles out of 250 found."
 
 **Date Formatting:**
 - All dates displayed in the email are formatted as `YYYY-MM-DD HH:MM UTC` by the HTML Builder using `strftime('%Y-%m-%d %H:%M UTC')`.
@@ -348,7 +361,6 @@ llm:
 
 # Deduplication Settings
 deduplication:
-  on_dedup_failure: "send_anyway"  # "send_anyway" or "fail"
   preferred_sources:  # Articles from these sources are preferred when selecting cluster representatives
     - "Reuters"
     - "Bloomberg"
@@ -393,8 +405,8 @@ OLLAMA_BASE_URL=http://localhost:11434
 | RSS Fetcher | Feed parse error | Log warning, continue |
 | RSS Fetcher | No articles found | Log info, continue |
 | Time Filter | Invalid date | Skip article, log warning |
-| LLM Deduplicator | Ollama unavailable | Configurable: skip dedup (`send_anyway`) or abort (`fail`) |
-| LLM Deduplicator | Model not found | Abort with exit code 1, log CRITICAL |
+| LLM Deduplicator | Ollama unavailable | Send error email, log ERROR, abort. Do not update state. |
+| LLM Deduplicator | Model not found | Send error email, log CRITICAL, abort. Do not update state. |
 | HTML Builder | Template error | Exit with error |
 | Email Sender | Auth failure | Exit with error, send alert if possible |
 | Email Sender | Network error | Retry 3 times with exponential backoff |
@@ -545,4 +557,3 @@ numpy>=1.24.0
    crontab -e
    # Add: 0 6,18 * * * /path/to/venv/bin/python /path/to/src/main.py
    ```
-

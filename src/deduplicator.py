@@ -61,12 +61,21 @@ def _cluster_by_title_similarity(articles, base_url, model, dedup_threshold, pre
 
     # cosine distance threshold = 1 - cosine similarity threshold
     distance_threshold = 1 - dedup_threshold
-    clustering = AgglomerativeClustering(
-        n_clusters=None,
-        distance_threshold=distance_threshold,
-        metric="cosine",
-        linkage="average",
-    )
+    # scikit-learn changed `affinity` to `metric`; support both for compatibility.
+    try:
+        clustering = AgglomerativeClustering(
+            n_clusters=None,
+            distance_threshold=distance_threshold,
+            metric="cosine",
+            linkage="average",
+        )
+    except TypeError:
+        clustering = AgglomerativeClustering(
+            n_clusters=None,
+            distance_threshold=distance_threshold,
+            affinity="cosine",
+            linkage="average",
+        )
     labels = clustering.fit_predict(X)
 
     grouped = defaultdict(list)  # type: Dict[int, List[Article]]

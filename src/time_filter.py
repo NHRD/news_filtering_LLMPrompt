@@ -16,6 +16,26 @@ def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _parse_iso8601_timestamp(ts: str) -> datetime:
+    """Parse ISO-8601 timestamp with timezone in Python 3.6+."""
+    normalized = ts.strip()
+    if normalized.endswith("Z"):
+        normalized = normalized[:-1] + "+00:00"
+    if len(normalized) >= 6 and normalized[-6] in "+-" and normalized[-3] == ":":
+        normalized = normalized[:-3] + normalized[-2:]
+
+    formats = (
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%dT%H:%M:%S%z",
+    )
+    for fmt in formats:
+        try:
+            return datetime.strptime(normalized, fmt)
+        except ValueError:
+            continue
+    raise ValueError("Invalid ISO-8601 timestamp: {0}".format(ts))
+
+
 def load_last_run_timestamp(state_file: str) -> Optional[datetime]:
     path = Path(state_file)
     if not path.exists():
@@ -26,7 +46,7 @@ def load_last_run_timestamp(state_file: str) -> Optional[datetime]:
         ts = data.get("last_successful_run")
         if not ts:
             return None
-        dt = datetime.fromisoformat(ts)
+        dt = _parse_iso8601_timestamp(ts)
         if dt.tzinfo is None:
             logging.warning("[Time Filter] Naive last_run timestamp assumed UTC")
             dt = dt.replace(tzinfo=timezone.utc)
