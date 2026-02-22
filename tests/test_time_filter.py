@@ -66,6 +66,6 @@ def test_ut_003_6_use_last_run_for_recovery(monkeypatch):
     monkeypatch.setattr("src.time_filter.now_utc", lambda: FIXED_NOW)
     last_run = FIXED_NOW - timedelta(hours=2)
 
-    cutoff = compute_cutoff(time_window_hours=12, last_run=last_run, force=False)
+    cutoff = compute_cutoff(time_window_hours=24, last_run=last_run, force=False)
 
     assert cutoff == last_run

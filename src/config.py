@@ -101,8 +101,8 @@ def load_config(path: str = "config.yaml") -> AppConfig:
             skip_feedly_proxy=bool(feeds.get("skip_feedly_proxy", True)),
         ),
         schedule=ScheduleConfig(
-            interval_hours=int(schedule.get("interval_hours", 12)),
-            time_window_hours=int(schedule.get("time_window_hours", 12)),
+            interval_hours=int(schedule.get("interval_hours", 24)),
+            time_window_hours=int(schedule.get("time_window_hours", 24)),
         ),
         llm=LLMConfig(
             base_url=_require(llm.get("base_url", "http://localhost:11434"), "llm.base_url"),

@@ -1,13 +1,13 @@
 # RSS News Filtering System
 
-RSS フィードから過去12時間以内の記事を取得し、Ollama による類似記事の重複排除を行い、カテゴリ別の HTML ダイジェストメールを Gmail で送信するシステム。
+RSS フィードから過去24時間以内の記事を取得し、Ollama による類似記事の重複排除を行い、カテゴリ別の HTML ダイジェストメールを Gmail で送信するシステム。
 
 ## 処理フロー
 
 ```
 OPML (フィード一覧)
   → RSS 取得 (feedparser)
-  → 時間フィルタ (過去12時間)
+  → 時間フィルタ (過去24時間)
   → 重複排除 (URL完全一致 + Ollama embedding による類似度クラスタリング)
   → HTML メール生成 (Jinja2)
   → Gmail SMTP 送信
@@ -68,7 +68,7 @@ Feedly などからエクスポートした OPML ファイルを `feedly_rss.opm
 
 | 設定 | デフォルト | 説明 |
 |---|---|---|
-| `schedule.time_window_hours` | 12 | 取得する記事の時間範囲 (時間) |
+| `schedule.time_window_hours` | 24 | 取得する記事の時間範囲 (時間) |
 | `llm.dedup_threshold` | 0.85 | 類似度の閾値 (0.0-1.0) |
 | `email.max_articles_per_email` | 200 | 1通あたりの最大記事数 |
 | `deduplication.on_dedup_failure` | send_anyway | Ollama 障害時の動作 (`send_anyway` / `fail`) |
@@ -103,7 +103,7 @@ python -m src.main --force
 ### オプションの組み合わせ
 
 ```bash
-# 初回実行: 過去12時間の全記事を取得してHTMLだけ確認
+# 初回実行: 過去24時間の全記事を取得してHTMLだけ確認
 python -m src.main --dry-run --force
 
 # 設定ファイルを指定
@@ -112,14 +112,14 @@ python -m src.main --config /path/to/config.yaml
 
 ## 定期実行 (cron)
 
-毎日 6:00 と 18:00 に実行する例:
+毎日 6:00 に実行する例:
 
 ```bash
 crontab -e
 ```
 
 ```cron
-0 6,18 * * * cd /path/to/news_filtering && /path/to/venv/bin/python -m src.main >> /dev/null 2>&1
+0 6 * * * cd /path/to/news_filtering && /path/to/venv/bin/python -m src.main >> /dev/null 2>&1
 ```
 
 ## 出力

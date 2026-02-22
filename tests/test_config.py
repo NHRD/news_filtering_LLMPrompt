@@ -13,8 +13,8 @@ def _base_yaml(sender="${GMAIL_ADDRESS}", password="${GMAIL_APP_PASSWORD}"):
           timeout_seconds: 10
           skip_feedly_proxy: true
         schedule:
-          interval_hours: 12
-          time_window_hours: 12
+          interval_hours: 24
+          time_window_hours: 24
         llm:
           base_url: http://localhost:11434
           embedding_model: nomic-embed-text
@@ -46,7 +46,7 @@ def test_ut_008_1_load_config_yaml(tmp_path, monkeypatch):
     cfg = load_config(str(cfg_file))
 
     assert cfg.email.sender_email == "sender@example.com"
-    assert cfg.schedule.time_window_hours == 12
+    assert cfg.schedule.time_window_hours == 24
 
 
 def test_ut_008_2_expand_env_vars(tmp_path, monkeypatch):

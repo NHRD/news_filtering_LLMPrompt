@@ -28,7 +28,7 @@ def _article(title, link, source="Source", hours_ago=0):
 def _config(preferred_sources=None, threshold=0.85):
     return AppConfig(
         feeds=FeedConfig(opml_file="feedly_rss.opml", timeout_seconds=10, skip_feedly_proxy=True),
-        schedule=ScheduleConfig(interval_hours=12, time_window_hours=12),
+        schedule=ScheduleConfig(interval_hours=24, time_window_hours=24),
         llm=LLMConfig(base_url="http://localhost:11434", embedding_model="nomic-embed-text", dedup_threshold=threshold),
         deduplication=DeduplicationConfig(on_dedup_failure="send_anyway", preferred_sources=preferred_sources or []),
         email=EmailConfig(
@@ -161,7 +161,7 @@ def test_ut_005_7_on_dedup_failure_fail(monkeypatch):
 
     cfg = AppConfig(
         feeds=FeedConfig(opml_file="feedly_rss.opml", timeout_seconds=10, skip_feedly_proxy=True),
-        schedule=ScheduleConfig(interval_hours=12, time_window_hours=12),
+        schedule=ScheduleConfig(interval_hours=24, time_window_hours=24),
         llm=LLMConfig(base_url="http://localhost:11434", embedding_model="nomic-embed-text", dedup_threshold=0.85),
         deduplication=DeduplicationConfig(on_dedup_failure="fail", preferred_sources=[]),
         email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),

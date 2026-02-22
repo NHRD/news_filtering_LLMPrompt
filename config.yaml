@@ -6,8 +6,8 @@ feeds:
 
 # Schedule Configuration
 schedule:
-  interval_hours: 12
-  time_window_hours: 12
+  interval_hours: 24
+  time_window_hours: 24
 
 # LLM Configuration (Ollama)
 llm:

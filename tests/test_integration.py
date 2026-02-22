@@ -21,7 +21,7 @@ from src.time_filter import filter_recent_articles, load_last_run_timestamp, sav
 def _config(tmp_path):
     return AppConfig(
         feeds=FeedConfig(opml_file=str(tmp_path / "feeds.opml"), timeout_seconds=1, skip_feedly_proxy=True),
-        schedule=ScheduleConfig(interval_hours=12, time_window_hours=12),
+        schedule=ScheduleConfig(interval_hours=24, time_window_hours=24),
         llm=LLMConfig(base_url="http://localhost:11434", embedding_model="nomic-embed-text", dedup_threshold=0.85),
         deduplication=DeduplicationConfig(on_dedup_failure="send_anyway", preferred_sources=["Reuters"]),
         email=EmailConfig(
@@ -66,7 +66,7 @@ def test_it_001_1_fetch_real_like_and_filter_by_time(tmp_path, monkeypatch):
     fetched = fetch_articles(feeds)
     filtered, _ = filter_recent_articles(
         fetched,
-        time_window_hours=12,
+        time_window_hours=24,
         last_run=datetime(2026, 2, 17, 0, 0, tzinfo=timezone.utc),
     )
 
