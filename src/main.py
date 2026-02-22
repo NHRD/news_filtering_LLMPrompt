@@ -8,9 +8,9 @@ from pathlib import Path
 
 try:
     from .config import AppConfig, load_config
-    from .deduplicator import deduplicate_articles
+    from .deduplicator import DeduplicationError, deduplicate_articles
     from .email_sender import send_email
-    from .html_builder import build_email_html
+    from .html_builder import build_email_html, build_error_html
     from .rss_fetcher import fetch_articles, parse_opml
     from .time_filter import (
         filter_recent_articles,
@@ -20,9 +20,9 @@ try:
     )
 except ImportError:  # pragma: no cover
     from config import AppConfig, load_config
-    from deduplicator import deduplicate_articles
+    from deduplicator import DeduplicationError, deduplicate_articles
     from email_sender import send_email
-    from html_builder import build_email_html
+    from html_builder import build_email_html, build_error_html
     from rss_fetcher import fetch_articles, parse_opml
     from time_filter import (
         filter_recent_articles,
@@ -90,22 +90,39 @@ def run_pipeline(config, dry_run=False, fetch_only=False, force=False):
 
     if fetch_only:
         logging.info("[Main] Fetch-only mode completed")
-        save_last_run_timestamp(config.output.state_file, now_utc())
         return 0
 
-    deduped = deduplicate_articles(recent_articles, config)
+    try:
+        deduped = deduplicate_articles(recent_articles, config)
+    except DeduplicationError as exc:
+        logging.error("[Main] Pipeline aborted due to deduplication failure: %s", exc)
+        error_html = build_error_html(str(exc))
+        if dry_run:
+            logging.info("[Main] Dry-run mode: error email not sent")
+            _write_html_if_needed(config, error_html)
+        else:
+            send_email(config.email, "CRITICAL: News Filtering Pipeline Error", error_html)
+        return 1
+
     logging.info("[Deduplicator] Reduced to %s unique articles", len(deduped))
 
+    total_unique = len(deduped)
     capped = deduped[: config.email.max_articles_per_email]
-    if len(capped) < len(deduped):
+    truncation_message = ""
+    if len(capped) < total_unique:
+        truncation_message = f"Showing the {len(capped)} most recent articles out of {total_unique} found."
         logging.info(
             "[Main] Applied max_articles_per_email=%s (%s -> %s)",
             config.email.max_articles_per_email,
-            len(deduped),
+            total_unique,
             len(capped),
         )
 
-    html = build_email_html(capped)
+    html = build_email_html(
+        capped,
+        truncation_message=truncation_message,
+        time_window_hours=config.schedule.time_window_hours,
+    )
     logging.info("[HTML Builder] Generated email (%s bytes)", len(html.encode("utf-8")))
     _write_html_if_needed(config, html)
 

@@ -10,7 +10,7 @@ from src.config import (
     OutputConfig,
     ScheduleConfig,
 )
-from src.deduplicator import deduplicate_articles
+from src.deduplicator import DeduplicationError, deduplicate_articles
 from src.email_sender import send_email
 from src.html_builder import build_email_html
 from src.main import run_pipeline
@@ -23,7 +23,7 @@ def _config(tmp_path):
         feeds=FeedConfig(opml_file=str(tmp_path / "feeds.opml"), timeout_seconds=1, skip_feedly_proxy=True),
         schedule=ScheduleConfig(interval_hours=24, time_window_hours=24),
         llm=LLMConfig(base_url="http://localhost:11434", embedding_model="nomic-embed-text", dedup_threshold=0.85),
-        deduplication=DeduplicationConfig(on_dedup_failure="send_anyway", preferred_sources=["Reuters"]),
+        deduplication=DeduplicationConfig(preferred_sources=["Reuters"]),
         email=EmailConfig(
             smtp_server="smtp.gmail.com",
             smtp_port=587,
@@ -96,7 +96,7 @@ def test_it_002_1_filter_then_deduplicate(monkeypatch):
         feeds=FeedConfig("feedly_rss.opml", 10, True),
         schedule=ScheduleConfig(12, 12),
         llm=LLMConfig("http://localhost:11434", "nomic-embed-text", 0.85),
-        deduplication=DeduplicationConfig("send_anyway", []),
+        deduplication=DeduplicationConfig([]),
         email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),
         output=OutputConfig(True, "./output", "./logs/x.log", "./state/x.json"),
     )
@@ -123,7 +123,7 @@ def test_it_002_2_dedup_with_ollama_running(monkeypatch):
         feeds=FeedConfig("feedly_rss.opml", 10, True),
         schedule=ScheduleConfig(12, 12),
         llm=LLMConfig("http://localhost:11434", "nomic-embed-text", 0.85),
-        deduplication=DeduplicationConfig("send_anyway", []),
+        deduplication=DeduplicationConfig([]),
         email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),
         output=OutputConfig(True, "./output", "./logs/x.log", "./state/x.json"),
     )
@@ -211,7 +211,7 @@ def test_e2e_001_2_run_pipeline_full_with_mocked_email(monkeypatch, tmp_path):
     assert sent["called"] is True
 
 
-def test_e2e_001_3_run_with_ollama_down_fallback(monkeypatch, tmp_path):
+def test_e2e_001_3_run_with_ollama_down_fails(monkeypatch, tmp_path):
     cfg = _config(tmp_path)
     base_time = datetime(2026, 2, 17, 12, 0, tzinfo=timezone.utc)
 
@@ -220,12 +220,16 @@ def test_e2e_001_3_run_with_ollama_down_fallback(monkeypatch, tmp_path):
         "src.main.fetch_articles",
         lambda *args, **kwargs: [Article("A", "https://example.com/1", base_time, "S", "Tech")],
     )
-    monkeypatch.setattr("src.main.deduplicate_articles", lambda articles, config: articles)
+    
+    def raise_dedup_error(*args, **kwargs):
+        raise DeduplicationError("ollama down")
+    
+    monkeypatch.setattr("src.main.deduplicate_articles", raise_dedup_error)
     monkeypatch.setattr("src.main.send_email", lambda *args, **kwargs: True)
 
     rc = run_pipeline(cfg, dry_run=False, fetch_only=False, force=True)
 
-    assert rc == 0
+    assert rc == 1
 
 
 def test_e2e_002_1_dry_run_flag(monkeypatch, tmp_path):

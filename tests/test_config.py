@@ -75,13 +75,12 @@ def test_ut_008_4_handle_missing_env_var(tmp_path, monkeypatch):
         load_config(str(cfg_file))
 
 
-def test_ut_008_5_on_dedup_failure_default(tmp_path, monkeypatch):
+def test_ut_008_5_preferred_sources_loading(tmp_path, monkeypatch):
     monkeypatch.setenv("GMAIL_ADDRESS", "sender@example.com")
     monkeypatch.setenv("GMAIL_APP_PASSWORD", "pass")
     cfg_file = tmp_path / "config.yaml"
-    # YAML without on_dedup_failure specified
     cfg_file.write_text(_base_yaml(), encoding="utf-8")
 
     cfg = load_config(str(cfg_file))
 
-    assert cfg.deduplication.on_dedup_failure == "send_anyway"
+    assert "Reuters" in cfg.deduplication.preferred_sources

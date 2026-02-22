@@ -71,7 +71,8 @@ def _to_datetime_utc(entry: Dict[str, Any], source_name: str) -> Optional[dateti
     parsed = entry.get("published_parsed") or entry.get("updated_parsed")
     if parsed is not None:
         # feedparser time struct has no timezone; architecture requires assuming UTC.
-        logging.warning("[RSS Fetcher] Naive published_parsed assumed UTC: %s", source_name)
+        # Log at DEBUG level to avoid excessive warnings for normal feedparser behavior.
+        logging.debug("[RSS Fetcher] Naive published_parsed assumed UTC: %s", source_name)
         return datetime(*parsed[:6], tzinfo=timezone.utc)
 
     for key in ("published", "updated"):

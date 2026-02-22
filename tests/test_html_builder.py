@@ -44,14 +44,13 @@ def test_ut_006_4_escape_html_in_title():
 
 
 def test_ut_006_5_handle_empty_list():
-    html = build_email_html([])
+    html = build_email_html([], time_window_hours=12)
 
-    assert "No articles" in html
+    assert "No articles found in the last 12 hours" in html
 
 
-def test_ut_006_6_respect_max_articles():
-    articles = [_article(f"Article {i}") for i in range(300)]
+def test_ut_006_6_truncation_message_display():
+    msg = "Showing 5 of 10 articles"
+    html = build_email_html([_article("A")], truncation_message=msg)
 
-    html = build_email_html(articles, max_articles=200)
-
-    assert html.count('class="article"') == 200
+    assert msg in html

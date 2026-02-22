@@ -29,11 +29,10 @@ def _group_articles(articles):
 def build_email_html(
     articles,
     template_path="templates/email.html",
-    max_articles=0,
+    truncation_message="",
+    time_window_hours=24,
 ):
-    # type: (List[Article], str, int) -> str
-    if max_articles > 0:
-        articles = articles[:max_articles]
+    # type: (List[Article], str, str, int) -> str
     template_file = Path(template_path)
     env = Environment(
         loader=FileSystemLoader(str(template_file.parent)),
@@ -59,5 +58,21 @@ def build_email_html(
         article_count=len(articles),
         source_count=source_count,
         categories=categories,
+        generation_time=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        truncation_message=truncation_message,
+        time_window_hours=time_window_hours,
+    )
+
+
+def build_error_html(error_message, template_path="templates/error.html"):
+    # type: (str, str) -> str
+    template_file = Path(template_path)
+    env = Environment(
+        loader=FileSystemLoader(str(template_file.parent)),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
+    template = env.get_template(template_file.name)
+    return template.render(
+        error_message=error_message,
         generation_time=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     )

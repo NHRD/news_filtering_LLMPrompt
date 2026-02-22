@@ -14,7 +14,7 @@ from src.config import (
     OutputConfig,
     ScheduleConfig,
 )
-from src.deduplicator import _dedup_by_exact_url, deduplicate_articles
+from src.deduplicator import DeduplicationError, _dedup_by_exact_url, deduplicate_articles
 
 
 def _dt(hours_ago=0):
@@ -30,7 +30,7 @@ def _config(preferred_sources=None, threshold=0.85):
         feeds=FeedConfig(opml_file="feedly_rss.opml", timeout_seconds=10, skip_feedly_proxy=True),
         schedule=ScheduleConfig(interval_hours=24, time_window_hours=24),
         llm=LLMConfig(base_url="http://localhost:11434", embedding_model="nomic-embed-text", dedup_threshold=threshold),
-        deduplication=DeduplicationConfig(on_dedup_failure="send_anyway", preferred_sources=preferred_sources or []),
+        deduplication=DeduplicationConfig(preferred_sources=preferred_sources or []),
         email=EmailConfig(
             smtp_server="smtp.gmail.com",
             smtp_port=587,
@@ -101,7 +101,14 @@ def test_ut_005_2_keep_different_titles(monkeypatch):
         "Apple news": [1.0, 0.0],
         "Fed rates": [0.0, 1.0],
     }
-    monkeypatch.setattr("src.deduplicator._get_embedding", lambda *args, **kwargs: vectors[kwargs.get("text", args[2])])
+
+    def fake_embedding(*args, **kwargs):
+        text = kwargs.get("text")
+        if text is None and len(args) > 2:
+            text = args[2]
+        return vectors[text]
+
+    monkeypatch.setattr("src.deduplicator._get_embedding", fake_embedding)
 
     deduped = deduplicate_articles(articles, _config())
 
@@ -142,10 +149,8 @@ def test_ut_005_5_handle_ollama_timeout(monkeypatch):
 
     monkeypatch.setattr("src.deduplicator._get_embedding", raise_timeout)
 
-    deduped = deduplicate_articles(articles, _config())
-
-    assert len(deduped) == 2
-    assert deduped[0].published >= deduped[1].published
+    with pytest.raises(DeduplicationError):
+        deduplicate_articles(articles, _config())
 
 
 def test_ut_005_6_handle_empty_list():
@@ -159,18 +164,10 @@ def test_ut_005_7_on_dedup_failure_fail(monkeypatch):
 
     monkeypatch.setattr("src.deduplicator._get_embedding", lambda *args, **kwargs: (_ for _ in ()).throw(ConnectionError("down")))
 
-    cfg = AppConfig(
-        feeds=FeedConfig(opml_file="feedly_rss.opml", timeout_seconds=10, skip_feedly_proxy=True),
-        schedule=ScheduleConfig(interval_hours=24, time_window_hours=24),
-        llm=LLMConfig(base_url="http://localhost:11434", embedding_model="nomic-embed-text", dedup_threshold=0.85),
-        deduplication=DeduplicationConfig(on_dedup_failure="fail", preferred_sources=[]),
-        email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),
-        output=OutputConfig(True, "./output", "./logs/x.log", "./state/x.json"),
-    )
+    cfg = _config()
 
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(DeduplicationError):
         deduplicate_articles(articles, cfg)
-    assert exc_info.value.code == 1
 
 
 def test_ut_005_8_model_not_found(monkeypatch):
@@ -186,6 +183,5 @@ def test_ut_005_8_model_not_found(monkeypatch):
 
     monkeypatch.setattr("src.deduplicator._get_embedding", raise_404)
 
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(DeduplicationError):
         deduplicate_articles(articles, _config())
-    assert exc_info.value.code == 1

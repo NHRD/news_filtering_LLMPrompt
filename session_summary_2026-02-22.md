@@ -4,89 +4,55 @@
 
 ### 1. 依頼内容
 - `architecture.md` を参照し、実装以降（実装修正・検証）を進行。
-- 実装担当として不具合修正とテスト再実行を完了。
+- Ollama 障害時の動作について `architecture.md` を正として「エラーメール送信 + 処理中断」を実装。
+- `issue_list.md` に挙げられた実装と設計の齟齬（計7件）をすべて修正。
+- README およびセッションサマリーの更新。
 
 ### 2. 実施した作業フロー
-1. リポジトリ内の設計資料・実装・テストを確認
-2. 全テスト実行で失敗ケースを再現
-3. 失敗原因をコードレベルで特定
-4. 実装修正（`src/deduplicator.py`, `src/time_filter.py`）
-5. 対象テスト + 全体テストを再実行し回帰確認
+1. **設計・実装の不整合修正（ISSUE-001〜007）**:
+    - `issue_list.md` に基づき、スケジュール設定、通知ロジック、状態更新、ログレベルなどを修正。
+    - 実装の「24時間」に合わせて `architecture.md` の記述を修正。
+2. **Python 3.6 互換性の再確保**:
+    - `dataclasses` が未実装の環境（Python 3.6）に対応するため、`Article` クラスを `NamedTuple` に戻し、設計書側を現実に合わせて更新。
+3. **エラー通知メールの実装**:
+    - 障害時に `DeduplicationError` を送出し、専用の HTML テンプレートで管理者に通知するフローを確立。
+4. **テストスイートの全面刷新**:
+    - `on_dedup_failure` の削除や引数変更に伴い、全テストファイルを修正。
+    - 動的な設定（優先ソースや時間ウィンドウ）が正しく反映されることを検証。
 
 ---
 
-## 失敗していたテストと原因
+## 主な修正と変更点
 
-初期状態では以下 4 件が失敗。
+### 1. Issue 対応（不整合の解消）
+- **ISSUE-001/006**: スケジュール時間を 24h に統一し、メール内の「過去 XX 時間」という表示を `config.yaml` から動的に取得するように変更。
+- **ISSUE-002**: 記事数が上限（`max_articles_per_email`）を超えた際、フッターに「XXX件中 XX件を表示」という通知が出るよう修正。
+- **ISSUE-004**: `--fetch-only` モードでは状態ファイル（`last_run.json`）を更新しないよう修正（取りこぼし防止）。
+- **ISSUE-005**: `feedparser` の仕様に起因する過剰な日付警告ログを `DEBUG` レベルに下げて抑制。
+- **ISSUE-007**: `build_email_html` の未使用パラメータ（`max_articles`）を削除し、責務を整理。
 
-| テスト | 失敗原因 |
-|---|---|
-| `tests/test_deduplicator.py::test_ut_005_1_cluster_similar_titles` | `AgglomerativeClustering(metric=...)` が実行環境の scikit-learn で未対応 |
-| `tests/test_deduplicator.py::test_ut_005_3_prefer_preferred_source` | 同上（Stage2クラスタリングが例外でフォールバック） |
-| `tests/test_deduplicator.py::test_ut_005_4_prefer_recent_if_no_preferred` | 同上（Stage2クラスタリングが例外でフォールバック） |
-| `tests/test_integration.py::test_it_001_2_state_persistence_across_runs` | Python 3.6 で `datetime.fromisoformat` が利用不可 |
-
-補足:
-- dedup 側は Stage2 が例外になると `on_dedup_failure=send_anyway` により非クラスタリング結果を返す設計のため、期待件数と不一致が発生。
-
----
-
-## 修正点（詳細）
-
-### 修正1: scikit-learn 互換対応
-**対象:** `src/deduplicator.py`
-
-- 変更前:
-  - `AgglomerativeClustering(..., metric="cosine", ...)` を固定使用。
-  - 古い scikit-learn では `metric` 引数が未対応で `TypeError`。
-
-- 変更後:
-  - `metric="cosine"` で初回生成を試行。
-  - `TypeError` の場合は `affinity="cosine"` で再生成するフォールバックを追加。
-
-- 目的:
-  - 実行環境差（scikit-learn のAPI差分）を吸収し、設計どおり Stage2 類似度クラスタリングを必ず機能させる。
-
-### 修正2: ISO8601パースのPython 3.6互換化
-**対象:** `src/time_filter.py`
-
-- 変更前:
-  - `load_last_run_timestamp()` 内で `datetime.fromisoformat(ts)` を使用。
-  - Python 3.6 では未実装のため state 読み込みに失敗し `None` 返却。
-
-- 変更後:
-  - `_parse_iso8601_timestamp(ts)` を新規追加。
-  - 対応内容:
-    - `Z` サフィックスを `+00:00` として正規化
-    - `%z` 用に `+09:00` 形式を `+0900` へ変換
-    - 秒あり / ミリ秒ありの両形式を `strptime` で受理
-  - `load_last_run_timestamp()` は新パーサを使用。
-
-- 目的:
-  - `last_run.json` の時刻を安定して復元し、設計どおりの state 永続化を保証。
+### 2. 環境適応と堅牢化
+- **NamedTuple の採用**: Python 3.6 互換性を維持しつつ、イミュータブルなデータ構造として `Article` を再定義。
+- **例外処理の厳格化**: 重複排除失敗時の「なんとなく送信する」設定を廃止。異常時は必ず通知を行い、次回の再処理を保証する設計に統一。
+- **動的設定の反映**: `preferred_sources` 等の設定がハードコードではなく、常に Config 変数を経由して動作するよう徹底。
 
 ---
 
 ## テスト結果
 
-### 部分再実行（修正対象）
-- コマンド: `pytest -q tests/test_deduplicator.py tests/test_integration.py`
-- 結果: **全件 pass**
-
 ### 全体再実行
-- コマンド: `pytest -q`
+- コマンド: `pytest -v`
 - 結果: **54 passed, 0 failed**
-
-警告（非ブロッカー）:
-- `joblib` の権限関連 warning（serial mode）
-- `numpy` の binary compatibility warning
-
-いずれも今回の失敗原因ではなく、テスト結果への影響はなし。
+- 確認事項:
+    - 設定ファイルの読み込みテスト OK
+    - 重複排除ロジック（URL/タイトル類似度） OK
+    - HTML 生成（動的メッセージ/エスケープ） OK
+    - 結合テスト（ドライラン/エラーハンドリング） OK
 
 ---
 
 ## 最終状態
 
-- 実装の主要不整合（互換性起因の4件失敗）は解消。
-- `architecture.md` で定義される重要機能（2段階重複排除・state永続化）は実行環境でも動作確認済み。
-- 現在のテストスイートは **54件すべて成功**。
+- `issue_list.md` に記載されたすべての不整合が解消。
+- システムは Python 3.6 という制約下で最大限の機能（2段階重複排除、エラー通知、状態保護）を設計通りに提供。
+- 実装、Architecture、README の三者が完全に一致した、クリーンな状態でセッションを終了。

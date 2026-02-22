@@ -16,6 +16,11 @@ except ImportError:  # pragma: no cover
     from config import AppConfig
 
 
+class DeduplicationError(Exception):
+    """Raised when deduplication fails and the pipeline should abort."""
+    pass
+
+
 def _dedup_by_exact_url(articles):
     # type: (List[Article]) -> List[Article]
     by_url = {}  # type: Dict[str, Article]
@@ -89,6 +94,15 @@ def _cluster_by_title_similarity(articles, base_url, model, dedup_threshold, pre
 
 def deduplicate_articles(articles, config):
     # type: (List[Article], AppConfig) -> List[Article]
+    # --- テスト用の記事を注入（検証時にこのブロックのコメントアウトを解除） ---
+    # try:
+    #     from test_data_template import generated_test_articles
+    #     articles = generated_test_articles
+    #     logging.info("--- Injected test articles from test_data_template.py ---")
+    # except ImportError:
+    #     logging.error("--- Failed to import test_data_template.py. Make sure it exists in the root directory. ---")
+    #     pass
+    # --- ここまで ---
     if not articles:
         return []
 
@@ -107,19 +121,13 @@ def deduplicate_articles(articles, config):
         return stage2
     except requests.exceptions.HTTPError as exc:
         if exc.response is not None and exc.response.status_code == 404:
-            logging.critical("[Deduplicator] Model not found: %s. Aborting.", config.llm.embedding_model)
-            raise SystemExit(1)
-        return _handle_dedup_failure(config, stage1, exc)
+            msg = f"Model not found: {config.llm.embedding_model}"
+            logging.critical("[Deduplicator] %s. Aborting.", msg)
+            raise DeduplicationError(msg)
+        msg = f"HTTP error during deduplication: {exc}"
+        logging.error("[Deduplicator] %s", msg)
+        raise DeduplicationError(msg)
     except Exception as exc:
-        return _handle_dedup_failure(config, stage1, exc)
-
-
-def _handle_dedup_failure(config, stage1, exc):
-    # type: (AppConfig, List[Article], Exception) -> List[Article]
-    on_failure = config.deduplication.on_dedup_failure
-    if on_failure == "fail":
-        logging.error("[Deduplicator] Dedup failure and on_dedup_failure=fail; aborting: %s", exc)
-        raise SystemExit(1)
-    logging.warning("[Deduplicator] Ollama unavailable; fallback without stage2 (on_dedup_failure=send_anyway): %s", exc)
-    stage1.sort(key=lambda a: a.published, reverse=True)
-    return stage1
+        msg = f"Unexpected error during deduplication: {exc}"
+        logging.error("[Deduplicator] %s", msg)
+        raise DeduplicationError(msg)

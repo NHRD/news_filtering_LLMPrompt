@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document defines the system architecture for the RSS News Filtering System. The system runs every 12 hours, fetches RSS articles published within the last 12 hours, deduplicates them using a local LLM (Ollama with embedding model), and sends an HTML email summary.
+This document defines the system architecture for the RSS News Filtering System. The system runs every 24 hours, fetches RSS articles published within the last 24 hours, deduplicates them using a local LLM (Ollama with embedding model), and sends an HTML email summary.
 
 **Note:** For workflow details (agent coordination, step-by-step execution), see `workflow.md`.
 
@@ -14,19 +14,19 @@ This document defines the system architecture for the RSS News Filtering System.
                     | (cron/systemd) |
                     +-------+--------+
                             |
-                            | triggers every 12h
+                            | triggers every 24h
                             v
 +------------------+    +-------------------+    +------------------+
 |  feedly_rss.opml | -> |  RSS Fetcher      | -> |  Article List    |
 |  (feed sources)  |    |  (feedparser)     |    |  (raw articles)  |
 +------------------+    +-------------------+    +--------+---------+
                                                          |
-                                                         | filter: last 12h
+                                                         | filter: last 24h
                                                          v
                                                +-------------------+
                                                | Time Filter       |
                                                | (published_date   |
-                                               |  >= now - 12h)    |
+                                               |  >= now - 24h)    |
                                                +---------+---------+
                                                          |
                                                          v
@@ -59,7 +59,7 @@ This document defines the system architecture for the RSS News Filtering System.
 
 ### 1. Scheduler
 
-**Responsibility:** Trigger the pipeline every 12 hours
+**Responsibility:** Trigger the pipeline every 24 hours
 
 **Options:**
 - **cron** (recommended for simplicity)
@@ -68,10 +68,10 @@ This document defines the system architecture for the RSS News Filtering System.
 
 **cron example:**
 ```cron
-0 6,18 * * * /path/to/venv/bin/python /path/to/main.py >> /path/to/logs/news_filter.log 2>&1
+0 6 * * * /path/to/venv/bin/python /path/to/main.py >> /path/to/logs/news_filter.log 2>&1
 ```
 
-**Execution times:** 06:00 and 18:00 daily
+**Execution times:** 06:00 daily
 
 ---
 
@@ -91,8 +91,9 @@ This document defines the system architecture for the RSS News Filtering System.
 
 **Data Structure:**
 ```python
-@dataclass
-class Article:
+from typing import NamedTuple
+
+class Article(NamedTuple):
     title: str
     link: str
     published: datetime
@@ -106,11 +107,11 @@ class Article:
 
 **Input:** All fetched articles
 
-**Output:** Articles published within the last 12 hours
+**Output:** Articles published within the last 24 hours
 
 **Logic:**
 ```python
-cutoff = datetime.now(timezone.utc) - timedelta(hours=12)
+cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
 recent_articles = [a for a in articles if a.published >= cutoff]
 ```
 
@@ -126,7 +127,7 @@ recent_articles = [a for a in articles if a.published >= cutoff]
   - The `--dry-run` option was used and the HTML file was saved successfully.
 - If any step in the pipeline fails (including network errors, LLM failures, etc.), the state file **will not** be updated.
 - On the next run, the system will use the older timestamp from the state file, ensuring that any articles from the failed run's time window are re-processed and not missed.
-- The cutoff for new articles is calculated as `max(last_run_timestamp, now - 12h)`.
+- The cutoff for new articles is calculated as `max(last_run_timestamp, now - 24h)`.
 
 ---
 
@@ -350,8 +351,8 @@ feeds:
 
 # Schedule Configuration
 schedule:
-  interval_hours: 12
-  time_window_hours: 12  # Fetch articles from last N hours
+  interval_hours: 24
+  time_window_hours: 24  # Fetch articles from last N hours
 
 # LLM Configuration (Ollama)
 llm:
@@ -431,7 +432,7 @@ OLLAMA_BASE_URL=http://localhost:11434
 2026-02-17 06:00:01 INFO  [RSS Fetcher] Found 110 unique feeds in OPML
 2026-02-17 06:00:05 WARN  [RSS Fetcher] Timeout: nitter.net/FirstSquawk/rss
 2026-02-17 06:01:30 INFO  [RSS Fetcher] Fetched 450 articles from 95 feeds
-2026-02-17 06:01:30 INFO  [Time Filter] 127 articles within last 12 hours
+2026-02-17 06:01:30 INFO  [Time Filter] 127 articles within last 24 hours
 2026-02-17 06:01:35 INFO  [Deduplicator] Reduced to 89 unique articles
 2026-02-17 06:01:36 INFO  [HTML Builder] Generated email (15KB)
 2026-02-17 06:01:38 INFO  [Email Sender] Sent to 2 recipients
@@ -555,5 +556,5 @@ numpy>=1.24.0
 5. **Setup cron job:**
    ```bash
    crontab -e
-   # Add: 0 6,18 * * * /path/to/venv/bin/python /path/to/src/main.py
+   # Add: 0 6 * * * /path/to/venv/bin/python /path/to/src/main.py
    ```
