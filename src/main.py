@@ -79,8 +79,7 @@ def _handle_post_run_system_actions(config: AppConfig) -> None:
     try:
         time.sleep(wait_minutes * 60)
         logging.info("[System] Executing poweroff...")
-        # Executing 'poweroff' without sudo as per user configuration
-        subprocess.run(["poweroff"], check=True)
+        subprocess.run(["sudo", "poweroff"], check=True)
     except KeyboardInterrupt:
         logging.info("[System] Shutdown aborted by user.")
     except Exception as e:
