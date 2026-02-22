@@ -67,7 +67,7 @@ RSS フィード一覧（OPMLファイル）をプロジェクトディレクト
 
 | 項目 | デフォルト | 説明 |
 |---|---|---|
-| `opml_file` | `default_rss.opml` | 読み込む OPML ファイルのパス。 |
+| `opml_file` | `${OPML_FILE}` (or `default_rss.opml`) | 読み込む OPML ファイルのパス。 |
 | `timeout_seconds` | `10` | 1つのフィード取得のタイムアウト時間。 |
 | `skip_feedly_proxy` | `true` | Feedly 独自のプロキシ URL をスキップするかどうか。 |
 

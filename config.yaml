@@ -1,6 +1,6 @@
 # RSS Feed Configuration
 feeds:
-  opml_file: "default_rss.opml"
+  opml_file: "${OPML_FILE}"
   timeout_seconds: 10
   skip_feedly_proxy: true
 
