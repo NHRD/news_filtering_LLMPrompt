@@ -4,6 +4,8 @@
 
 本ワークフローは、Claude Code をオーケストレーターとして、Gemini CLI と Codex CLI を連携させてRSSニュースフィルタリングシステムを構築する。
 
+**注意:** 毎セッションの作業記録は `session_summaries/` ディレクトリに保存すること。
+
 ## Agents
 
 | Agent           | Role                             | CLI Command        |
@@ -25,7 +27,7 @@
     "step1_completed": null
   },
   "artifacts": {
-    "architecture": "architecture.md",
+    "architecture": "design/architecture.md",
     "architecture_review": null,
     "implementation": null,
     "test_plan": null,
@@ -41,25 +43,25 @@
 
 **実行者:** Claude Code
 
-**入力:** `agent_roles.md`, `feedly_rss.opml`, `fetch_news.py`
+**入力:** `agent_roles.md`, `feedly_rss.opml`, `old/fetch_news.py`
 
-**出力:** `architecture.md`
+**出力:** `design/architecture.md`
 
 ### 処理内容
 
 1. 既存ファイルを分析
 2. システムアーキテクチャを設計
-3. `architecture.md` を作成/更新
+3. `design/architecture.md` を作成/更新
 
 ### 完了条件
 
-- `architecture.md` が存在し、全体概要、データフロー、構成コンポーネント、その他情報ファイルおよびコーナーケース、エラーハンドリングの設計がセクションにわけられ記述されている
+- `design/architecture.md` が存在し、全体概要、データフロー、構成コンポーネント、その他情報ファイルおよびコーナーケース、エラーハンドリングの設計がセクションにわけられ記述されている
 
 ### 次ステップへのトリガー
 
 ```bash
 # workflow_state.json を更新
-jq '.current_step = 2 | .artifacts.architecture = "architecture.md"' workflow_state.json > tmp.json && mv tmp.json workflow_state.json
+jq '.current_step = 2 | .artifacts.architecture = "design/architecture.md"' workflow_state.json > tmp.json && mv tmp.json workflow_state.json
 ```
 
 ---
@@ -68,9 +70,9 @@ jq '.current_step = 2 | .artifacts.architecture = "architecture.md"' workflow_st
 
 **実行者:** Gemini CLI（Claude Code が起動）
 
-**入力:** `architecture.md`, `agent_roles.md`
+**入力:** `design/architecture.md`, `agent_roles.md`
 
-**出力:** `architecture_review.md`
+**出力:** `design/architecture_review.md`
 
 ### Claude → Gemini 起動コマンド
 
@@ -90,29 +92,29 @@ Step 2: Architecture Review
 - Approved / Needs Revision の判定
 
 ## 入力ファイル
-- architecture.md: レビュー対象の設計書
+- design/architecture.md: レビュー対象の設計書
 - agent_roles.md: プロジェクトの役割分担
 
 ## 出力
-architecture_review.md に以下を記載してください：
+design/architecture_review.md に以下を記載してください：
 1. 発見した問題点（箇条書き）
 2. 改善提案（具体的に）
 3. 判定: Approved / Needs Revision
 
-レビュー結果を architecture_review.md に保存してください。
+レビュー結果を design/architecture_review.md に保存してください。
 EOF
 )"
 ```
 
 ### Gemini の処理
 
-1. `architecture.md` を読み込み
+1. `design/architecture.md` を読み込み
 2. `agent_roles.md` の基準に従いレビュー
-3. `architecture_review.md` を作成
+3. `design/architecture_review.md` を作成
 
 ### 完了条件
 
-- `architecture_review.md` が存在
+- `design/architecture_review.md` が存在
 - 判定（Approved / Needs Revision）が明記されている
 
 ### Gemini → Codex フィードバック
@@ -120,19 +122,19 @@ EOF
 Gemini は処理完了後、以下を stdout に出力：
 
 ```text
-REVIEW_COMPLETE: architecture_review.md
+REVIEW_COMPLETE: design/architecture_review.md
 VERDICT: Approved|Needs Revision
 ```
 
 ### Codex の後処理
 
-1. `architecture_review.md` を読み込み
-2. Needs Revision の場合: `architecture.md` を更新（1回のみ）
+1. `design/architecture_review.md` を読み込み
+2. Needs Revision の場合: `design/architecture.md` を更新（1回のみ）
 3. `workflow_state.json` を更新
 
 ```bash
 # Codex が architecture を更新後
-jq '.current_step = 3 | .artifacts.architecture_review = "architecture_review.md"' workflow_state.json > tmp.json && mv tmp.json workflow_state.json
+jq '.current_step = 3 | .artifacts.architecture_review = "design/architecture_review.md"' workflow_state.json > tmp.json && mv tmp.json workflow_state.json
 ```
 
 ---
@@ -141,9 +143,9 @@ jq '.current_step = 3 | .artifacts.architecture_review = "architecture_review.md
 
 **実行者:** Codex CLI（実装）、Claude Code（テスト設計）
 
-**入力:** `architecture.md`, `architecture_review.md`
+**入力:** `design/architecture.md`, `design/architecture_review.md`
 
-**出力:** `src/` ディレクトリ、`test_plan.md`
+**出力:** `src/` ディレクトリ、`tests/test_plan.md`
 
 ### Claude → Codex 起動コマンド
 
@@ -155,13 +157,13 @@ codex exec "$(cat <<'EOF'
 Step 3: Implementation
 
 ## あなたの役割（agent_roles.md より）
-- architecture.md に基づき全コンポーネントを実装
+- design/architecture.md に基づき全コンポーネントを実装
 - RSS fetcher, LLM dedup, HTML email builder, Gmail sender, scheduler
 
 ## 入力ファイル
-- architecture.md: 設計書
-- architecture_review.md: レビュー結果（反映済み）
-- fetch_news.py: 拡張のベースとなる既存コード
+- design/architecture.md: 設計書
+- design/architecture_review.md: レビュー結果（反映済み）
+- old/fetch_news.py: 拡張のベースとなる既存コード
 
 ## 出力
 以下のファイルを作成してください：
@@ -187,10 +189,10 @@ EOF
 
 Codex が実装中に Claude は以下を実行：
 
-1. `architecture.md` を基にテストケースを設計
-2. `test_plan.md` を作成
+1. `design/architecture.md` を基にテストケースを設計
+2. `tests/test_plan.md` を作成
 
-**test_plan.md の内容:**
+**tests/test_plan.md の内容:**
 
 - 単体テスト（各コンポーネント）
 - 統合テスト（コンポーネント間連携）
@@ -213,13 +215,13 @@ fi
 ### 完了条件
 
 - `src/` ディレクトリに全ファイルが存在
-- `test_plan.md` が存在
+- `tests/test_plan.md` が存在
 - `.codex_status` に `IMPLEMENTATION_COMPLETE` が記録
 
 ### 次ステップへのトリガー
 
 ```bash
-jq '.current_step = 4 | .artifacts.implementation = "src/" | .artifacts.test_plan = "test_plan.md"' workflow_state.json > tmp.json && mv tmp.json workflow_state.json
+jq '.current_step = 4 | .artifacts.implementation = "src/" | .artifacts.test_plan = "tests/test_plan.md"' workflow_state.json > tmp.json && mv tmp.json workflow_state.json
 ```
 
 ---
@@ -228,9 +230,9 @@ jq '.current_step = 4 | .artifacts.implementation = "src/" | .artifacts.test_pla
 
 **実行者:** Codex CLI（Claude Code が起動）
 
-**入力:** `test_plan.md`, `src/`
+**入力:** `tests/test_plan.md`, `src/`
 
-**出力:** `tests/`, `test_results.md`
+**出力:** `tests/`, `tests/test_results.md`
 
 ### Claude → Codex 起動コマンド
 
@@ -242,11 +244,11 @@ codex exec "$(cat <<'EOF'
 Step 4: Test Implementation & Execution
 
 ## あなたの役割（agent_roles.md より）
-- test_plan.md に基づきテストコードを作成
+- tests/test_plan.md に基づきテストコードを作成
 - テストを実行し結果を収集
 
 ## 入力ファイル
-- test_plan.md: テスト設計書
+- tests/test_plan.md: テスト設計書
 - src/: テスト対象の実装コード
 
 ## 出力
@@ -259,9 +261,9 @@ Step 4: Test Implementation & Execution
    - tests/test_integration.py
 
 2. テストを実行
-   pytest tests/ -v --tb=short > test_output.txt 2>&1
+   pytest tests/ -v --tb=short > tests/test_output.txt 2>&1
 
-3. test_results.md を作成
+3. tests/test_results.md を作成
    - 各テストケースの Pass/Fail
    - 失敗したテストの詳細
    - カバレッジ情報（可能であれば）
@@ -277,13 +279,13 @@ EOF
 ### 完了条件
 
 - `tests/` ディレクトリに全テストファイルが存在
-- `test_results.md` が存在
+- `tests/test_results.md` が存在
 - テスト実行が完了
 
 ### 次ステップへのトリガー（Codex が実行）
 
 ```bash
-jq '.current_step = 5 | .artifacts.test_results = "test_results.md"' workflow_state.json > tmp.json && mv tmp.json workflow_state.json
+jq '.current_step = 5 | .artifacts.test_results = "tests/test_results.md"' workflow_state.json > tmp.json && mv tmp.json workflow_state.json
 ```
 
 ---
@@ -292,9 +294,9 @@ jq '.current_step = 5 | .artifacts.test_results = "test_results.md"' workflow_st
 
 **実行者:** Gemini CLI（Codex が起動）
 
-**入力:** `architecture.md`, `test_plan.md`, `test_results.md`, `src/`
+**入力:** `design/architecture.md`, `tests/test_plan.md`, `tests/test_results.md`, `src/`
 
-**出力:** `final_review.md`
+**出力:** `design/review_artifact/final_review.md`
 
 ### Codex → Gemini 起動コマンド
 
@@ -312,13 +314,13 @@ Step 5: Test Result Review
 - 最終判定: Release-ready / Needs fixes
 
 ## 入力ファイル
-- architecture.md: 設計書
-- test_plan.md: テスト設計
-- test_results.md: テスト実行結果
+- design/architecture.md: 設計書
+- tests/test_plan.md: テスト設計
+- tests/test_results.md: テスト実行結果
 - src/: 実装コード
 
 ## 出力
-final_review.md に以下を記載してください：
+design/review_artifact/final_review.md に以下を記載してください：
 1. テスト結果サマリー（Pass/Fail 数）
 2. カバレッジ分析
 3. 発見された問題点
@@ -327,7 +329,7 @@ final_review.md に以下を記載してください：
 
 ## ユーザーへの通知
 レビュー完了後、以下を stdout に出力してください：
-FINAL_REVIEW_COMPLETE: final_review.md
+FINAL_REVIEW_COMPLETE: design/review_artifact/final_review.md
 VERDICT: Release-ready|Needs fixes
 EOF
 )"
@@ -335,7 +337,7 @@ EOF
 
 ### 完了条件
 
-- `final_review.md` が存在
+- `design/review_artifact/final_review.md` が存在
 - 最終判定（Release-ready / Needs fixes）が明記
 
 ### Gemini → ユーザー 通知
@@ -344,7 +346,7 @@ EOF
 ========================================
 WORKFLOW COMPLETE
 ========================================
-Final Review: final_review.md
+Final Review: design/review_artifact/final_review.md
 Verdict: Release-ready / Needs fixes
 ========================================
 ```
@@ -367,8 +369,9 @@ Step 1                Step 2                Step 3                Step 4        
 └──────────┘         └──────────┘         └──────────┘         └──────────┘         └──────────┘
      │                    │                    │                    │                    │
      v                    v                    v                    v                    v
-architecture.md    architecture_      src/*.py           tests/*.py         final_review.md
-                   review.md          test_plan.md       test_results.md
+design/            design/            src/*.py           tests/*.py         design/review_
+architecture.md    architecture_      tests/test_        tests/test_        artifact/
+                   review.md          plan.md            results.md         final_review.md
 
 
 エージェント起動フロー:
@@ -388,15 +391,15 @@ architecture.md    architecture_      src/*.py           tests/*.py         fina
 
 | Step | Created By | File               | Description            |
 | ---- | ---------- | ------------------ | ---------------------- |
-| 1    | Claude     | `architecture.md`  | システムアーキテクチャ設計 |
-| 2    | Gemini     | `architecture_review.md` | アーキテクチャレビュー結果 |
+| 1    | Claude     | `design/architecture.md`  | システムアーキテクチャ設計 |
+| 2    | Gemini     | `design/architecture_review.md` | アーキテクチャレビュー結果 |
 | 3    | Codex      | `src/*.py`         | 実装コード              |
 | 3    | Codex      | `requirements.txt` | Python依存関係          |
 | 3    | Codex      | `config.yaml`      | 設定ファイル            |
-| 3    | Claude     | `test_plan.md`     | テスト設計書            |
+| 3    | Claude     | `tests/test_plan.md` | テスト設計書            |
 | 4    | Codex      | `tests/*.py`       | テストコード            |
-| 4    | Codex      | `test_results.md`  | テスト実行結果          |
-| 5    | Gemini     | `final_review.md`  | 最終レビュー結果        |
+| 4    | Codex      | `tests/test_results.md` | テスト実行結果          |
+| 5    | Gemini     | `design/review_artifact/final_review.md`  | 最終レビュー結果        |
 | -    | System     | `workflow_state.json` | ワークフロー状態管理   |
 
 ---
@@ -417,13 +420,13 @@ fi
 
 ### レビューで Needs Revision の場合
 
-- Step 2: Claude が architecture.md を1回だけ更新し、再レビューなしで Step 3 へ進む
+- Step 2: Claude が design/architecture.md を1回だけ更新し、再レビューなしで Step 3 へ進む
 - Step 5: Needs fixes の場合はユーザーに通知し、手動対応を促す
 
 ### 実装/テスト失敗
 
 - Codex の実装がエラーで終了した場合、エラーログを保存しユーザーに通知
-- テストが失敗した場合、test_results.md に詳細を記録し Step 5 のレビューで評価
+- テストが失敗した場合、tests/test_results.md に詳細を記録し Step 5 のレビューで評価
 
 ---
 

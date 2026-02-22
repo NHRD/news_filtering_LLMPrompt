@@ -96,11 +96,11 @@ def deduplicate_articles(articles, config):
     # type: (List[Article], AppConfig) -> List[Article]
     # --- テスト用の記事を注入（検証時にこのブロックのコメントアウトを解除） ---
     # try:
-    #     from test_data_template import generated_test_articles
+    #     from tests.test_data_template import generated_test_articles
     #     articles = generated_test_articles
-    #     logging.info("--- Injected test articles from test_data_template.py ---")
+    #     logging.info("--- Injected test articles from tests/test_data_template.py ---")
     # except ImportError:
-    #     logging.error("--- Failed to import test_data_template.py. Make sure it exists in the root directory. ---")
+    #     logging.error("--- Failed to import tests/test_data_template.py. ---")
     #     pass
     # --- ここまで ---
     if not articles:

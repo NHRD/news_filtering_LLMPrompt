@@ -49,6 +49,10 @@ class OutputConfig(NamedTuple):
     state_file: str
 
 
+class SystemConfig(NamedTuple):
+    poweroff_after_run: bool
+
+
 class AppConfig(NamedTuple):
     feeds: FeedConfig
     schedule: ScheduleConfig
@@ -56,6 +60,7 @@ class AppConfig(NamedTuple):
     deduplication: DeduplicationConfig
     email: EmailConfig
     output: OutputConfig
+    system: SystemConfig
 
 
 def _resolve_env(value: Any) -> Any:
@@ -92,10 +97,11 @@ def load_config(path: str = "config.yaml") -> AppConfig:
     dedup = cfg.get("deduplication", {})
     email = cfg.get("email", {})
     output = cfg.get("output", {})
+    system = cfg.get("system", {})
 
     return AppConfig(
         feeds=FeedConfig(
-            opml_file=feeds.get("opml_file", "feedly_rss.opml"),
+            opml_file=feeds.get("opml_file", "default_rss.opml"),
             timeout_seconds=int(feeds.get("timeout_seconds", 10)),
             skip_feedly_proxy=bool(feeds.get("skip_feedly_proxy", True)),
         ),
@@ -124,5 +130,8 @@ def load_config(path: str = "config.yaml") -> AppConfig:
             html_dir=output.get("html_dir", "./output"),
             log_file=output.get("log_file", "./logs/news_filter.log"),
             state_file=output.get("state_file", "./state/last_run.json"),
+        ),
+        system=SystemConfig(
+            poweroff_after_run=bool(system.get("poweroff_after_run", False)),
         ),
     )

@@ -1,6 +1,6 @@
 # RSS Feed Configuration
 feeds:
-  opml_file: "feedly_rss.opml"
+  opml_file: "default_rss.opml"
   timeout_seconds: 10
   skip_feedly_proxy: true
 
@@ -40,3 +40,7 @@ output:
   html_dir: "./output"
   log_file: "./logs/news_filter.log"
   state_file: "./state/last_run.json"
+
+# System Configuration
+system:
+  poweroff_after_run: false

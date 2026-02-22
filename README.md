@@ -15,7 +15,7 @@ OPML (フィード一覧)
 
 ## 必要なもの
 
-- Python 3.12+
+- Python 3.12+ (実行環境は Python 3.6+ 互換)
 - [Ollama](https://ollama.com/) (重複排除用の embedding モデル)
 - Gmail アカウント (2段階認証 + アプリパスワード)
 - RSS フィード一覧 (OPML ファイル)
@@ -53,25 +53,86 @@ COMPANY_EMAIL=your.email@company.com
 OLLAMA_BASE_URL=http://localhost:11434
 ```
 
-Gmail アプリパスワードの取得方法:
-1. Google アカウントで2段階認証を有効化
-2. https://myaccount.google.com/apppasswords にアクセス
-3. アプリ名を入力して生成
-
 ### 4. OPML ファイルの配置
 
-Feedly などからエクスポートした OPML ファイルを `feedly_rss.opml` として配置。
+RSS フィード一覧（OPMLファイル）をプロジェクトディレクトリに配置します。デフォルトでは `default_rss.opml` というファイル名が想定されています。
 
-### 5. 設定のカスタマイズ (任意)
+---
 
-`config.yaml` で各種パラメータを変更可能:
+## 設定の詳細
 
-| 設定 | デフォルト | 説明 |
+`config.yaml` および `.env` でシステム全体の動作を詳細にカスタマイズできます。
+
+### 1. RSS フィード設定 (`feeds`)
+
+| 項目 | デフォルト | 説明 |
 |---|---|---|
-| `schedule.time_window_hours` | 24 | 取得する記事の時間範囲 (時間) |
-| `llm.dedup_threshold` | 0.85 | 類似度の閾値 (0.0-1.0) |
-| `email.max_articles_per_email` | 200 | 1通あたりの最大記事数 |
-| `deduplication.preferred_sources` | Reuters等 | 重複時に優先するソース |
+| `opml_file` | `default_rss.opml` | 読み込む OPML ファイルのパス。 |
+| `timeout_seconds` | `10` | 1つのフィード取得のタイムアウト時間。 |
+| `skip_feedly_proxy` | `true` | Feedly 独自のプロキシ URL をスキップするかどうか。 |
+
+### 2. スケジュール設定 (`schedule`)
+
+| 項目 | デフォルト | 説明 |
+|---|---|---|
+| `interval_hours` | `24` | 実行間隔（ドキュメント上の基準値）。 |
+| `time_window_hours` | `24` | 取得対象とする記事の過去時間範囲。メール本文の「過去 XX 時間」の表示にも反映されます。 |
+
+### 3. LLM/重複排除設定 (`llm`, `deduplication`)
+
+| 項目 | デフォルト | 説明 |
+|---|---|---|
+| `llm.base_url` | `${OLLAMA_BASE_URL}` | Ollama API のエンドポイント。 |
+| `llm.embedding_model` | `nomic-embed-text` | タイトル類似度計算に使用するモデル名。 |
+| `llm.dedup_threshold` | `0.85` | 重複とみなす類似度の閾値 (0.0-1.0)。値が高いほど厳格（似ているものだけを重複とする）。 |
+| `deduplication.preferred_sources` | (リスト) | 重複記事の中から1つ選ぶ際、優先的に採用するソース名のリスト（例: Reuters, Bloomberg等）。 |
+
+### 4. メール送信設定 (`email`)
+
+| 項目 | デフォルト | 説明 |
+|---|---|---|
+| `smtp_server` | `smtp.gmail.com` | SMTP サーバのアドレス。 |
+| `smtp_port` | `587` | SMTP ポート番号。 |
+| `sender_email` | `${GMAIL_ADDRESS}` | 送信元アドレス。 |
+| `sender_password` | `${GMAIL_APP_PASSWORD}` | Gmail のアプリパスワード。 |
+| `recipients` | (リスト) | 受信者のメールアドレスリスト。 |
+| `max_articles_per_email` | `200` | 1通のメールに含める最大記事数。超過分は切り捨てられ、フッターに通知が表示されます。 |
+
+### 5. 出力・状態管理 (`output`)
+
+| 項目 | デフォルト | 説明 |
+|---|---|---|
+| `save_html` | `true` | 生成された HTML をファイルとして保存するかどうか。 |
+| `html_dir` | `./output` | HTML ファイルの保存先ディレクトリ。 |
+| `log_file` | `./logs/news_filter.log` | 実行ログの出力先。 |
+| `state_file` | `./state/last_run.json` | 最終実行時刻を記録するファイル（重複取得防止用）。 |
+
+### 6. システム動作 (`system`)
+
+| 項目 | デフォルト | 説明 |
+|---|---|---|
+| `poweroff_after_run` | `false` | `true` に設定すると、全処理が正常完了した 5 分後に PC を自動シャットダウンします。 |
+
+---
+
+## 自動シャットダウン機能
+
+`config.yaml` の `system.poweroff_after_run` を `true` に設定すると、正常にメール送信（またはドライランでのHTML保存）が完了した後、5分間の待機を経て `poweroff` コマンドを実行します。
+
+- 待機時間（5分）の間に `Ctrl+C` を押すことで、シャットダウンをキャンセルできます。
+
+### OS側の設定（パスワードなしでの実行許可）
+
+スクリプトから自動でシャットダウンを行うには、`poweroff` コマンドをパスワードなしで実行できるように設定する必要があります。以下の手順で設定を行ってください。
+
+1. ターミナルで `sudo visudo` コマンドを実行します。
+2. ファイルの末尾に以下の一行を追記します（`username` はご自身のPCのユーザー名に変えてください）。
+
+```bash
+username ALL=(ALL) NOPASSWD: /usr/sbin/poweroff
+```
+
+※ 環境によってはパスが `/sbin/poweroff` の場合があります。`which poweroff` コマンドで正しいパスを確認してください。
 
 ## 障害時の動作
 
@@ -129,49 +190,45 @@ crontab -e
 0 6 * * * cd /path/to/news_filtering && /path/to/venv/bin/python -m src.main >> /dev/null 2>&1
 ```
 
-## 出力
-
-| 出力先 | 内容 |
-|---|---|
-| `output/news_digest_*.html` | 生成された HTML メール |
-| `logs/news_filter.log` | 実行ログ (10MB x 5ファイルでローテーション) |
-| `state/last_run.json` | 最終実行時刻 (障害復旧用) |
-
-## テスト
-
-```bash
-pip install pytest pytest-cov
-
-# 全テスト実行
-pytest tests/ -v
-
-# カバレッジ付き
-pytest tests/ --cov=src --cov-report=term-missing
-```
-
 ## プロジェクト構成
 
 ```
 news_filtering/
+├── design/
+│   ├── architecture.md       # システムアーキテクチャ設計
+│   ├── architecture_review.md # 設計レビュー結果
+│   └── review_artifact/      # 実行後の評価資料
+│       ├── final_review.md   # 最終評価レポート
+│       ├── refactor_24h.md   # リファクタリング計画
+│       └── issue_list.md     # 修正事項リスト
+├── session_summaries/
+│   └── session_summary_*.md  # 毎セッションの作業記録
 ├── src/
-│   ├── __init__.py          # Article データクラス
-│   ├── main.py              # エントリーポイント (CLI)
-│   ├── config.py            # 設定読み込み
-│   ├── rss_fetcher.py       # OPML 解析 + RSS 取得
-│   ├── time_filter.py       # 時間フィルタリング
-│   ├── deduplicator.py      # 2段階重複排除 (URL + Ollama embedding)
-│   ├── html_builder.py      # HTML メール生成
-│   └── email_sender.py      # Gmail SMTP 送信
+│   ├── __init__.py           # Article データクラス
+│   ├── main.py               # エントリーポイント (CLI)
+│   ├── config.py             # 設定読み込み
+│   ├── rss_fetcher.py        # OPML 解析 + RSS 取得
+│   ├── time_filter.py        # 時間フィルタリング
+│   ├── deduplicator.py       # 2段階重複排除 (URL + Ollama embedding)
+│   ├── html_builder.py       # HTML メール生成
+│   └── email_sender.py       # Gmail SMTP 送信
 ├── templates/
-│   └── email.html           # メールテンプレート (Jinja2)
-├── tests/                   # テストコード
-├── config.yaml              # 設定ファイル
-├── .env                     # 認証情報 (git 管理外)
-├── .env.example             # .env のテンプレート
-├── feedly_rss.opml          # RSS フィード一覧
-└── requirements.txt         # Python 依存関係
+│   ├── email.html            # HTML メールテンプレート (Jinja2)
+│   └── error.html            # エラー通知テンプレート (Jinja2)
+├── tests/
+│   ├── test_*.py             # ユニットテスト・統合テスト
+│   ├── test_data_template.py # 精度検証用テンプレート
+│   ├── test_plan.md           # テスト計画書
+│   └── test_results.md        # テスト結果レポート
+├── config.yaml               # 設定ファイル
+├── .env                      # 認証情報 (git 管理外)
+├── .env.example              # .env のテンプレート
+├── default_rss.opml          # RSS フィード一覧
+├── workflow.md               # ワークフロー定義
+├── workflow_state.json       # ワークフロー状態管理
+├── agent_roles.md            # エージェント役割分担
+└── requirements.txt          # Python 依存関係
 ```
-└── requirements.txt         # Python 依存関係
 
 ## 重複排除の精度検証
 
@@ -179,98 +236,12 @@ news_filtering/
 
 ### 1. テストデータの準備
 
-プロジェクトのルートディレクトリに `test_data_template.py` ファイルが作成されています。このファイルには `test_articles_data` というリストがあり、ここにテストしたい記事のデータを定義します。
-
-`test_data_template.py` の編集例：
-```python
-# test_data_template.py
-
-# --- ここに、テストしたい記事のデータを記述してください ---
-test_articles_data = [
-    {
-        "title": "速報：新型AIチップ、驚異の性能を発表",
-        "source": "TechNews A",
-        "link": "http://example.com/news1",
-        "published_offset_hours": 0 # 現在時刻
-    },
-    {
-        "title": "新型AI半導体、驚異的なパフォーマンスを公開",
-        "source": "TechJournal B",
-        "link": "http://example.com/news2_similar",
-        "published_offset_hours": 1 # 1時間前
-    },
-    # ... 他の記事データ ...
-]
-```
-`published_offset_hours` は、現在時刻からのオフセット（時間単位）で公開日時を設定するためのものです。
+`tests/test_data_template.py` ファイルを編集します。
 
 ### 2. テストデータ注入の有効化
 
-`src/deduplicator.py` ファイルの `deduplicate_articles` 関数の冒頭に、以下のコメントアウトされたコードブロックがあります。
-
-```python
-# src/deduplicator.py
-
-def deduplicate_articles(articles, config):
-    # --- テスト用の記事を注入（検証時にこのブロックのコメントアウトを解除） ---
-    # try:
-    #     from test_data_template import generated_test_articles
-    #     articles = generated_test_articles
-    #     logging.info("--- Injected test articles from test_data_template.py ---")
-    # except ImportError:
-    #     logging.error("--- Failed to import test_data_template.py. Make sure it exists in the root directory. ---")
-    #     pass
-    # --- ここまで ---
-    if not articles:
-        return []
-    # ...
-```
-
-このコードブロック全体のコメントアウトを解除してください。
-
-```python
-# src/deduplicator.py (コメントアウト解除後)
-
-def deduplicate_articles(articles, config):
-    # --- テスト用の記事を注入（検証時にこのブロックのコメントアウトを解除） ---
-    try:
-        from test_data_template import generated_test_articles
-        articles = generated_test_articles
-        logging.info("--- Injected test articles from test_data_template.py ---")
-    except ImportError:
-        logging.error("--- Failed to import test_data_template.py. Make sure it exists in the root directory. ---")
-        pass
-    # --- ここまで ---
-    if not articles:
-        return []
-    # ...
-```
+`src/deduplicator.py` ファイルの `deduplicate_articles` 関数の冒頭にあるコメントアウトを解除します。
 
 ### 3. 類似度閾値の調整
 
-`config.yaml` ファイルの `llm.dedup_threshold` の値を調整します。この値は `0.0` (類似度チェックなし) から `1.0` (完全一致) の範囲で設定でき、重複とみなすタイトルの類似度の厳しさを制御します。
-
-`config.yaml` の編集例：
-```yaml
-# config.yaml
-llm:
-  # ...
-  dedup_threshold: 0.85 # この値を変更して試してください
-```
-
-### 4. 実行と結果の確認
-
-プロジェクトのルートディレクトリで以下のコマンドを実行します。
-
-```bash
-python -m src.main
-```
-
-実行中に、`[Deduplicator]` のログメッセージが表示されます。
-例: `[Deduplicator] Stage 2 title clustering: 5 -> 3`
-
-これは、ステージ1（URL重複排除後）で5つの記事が、ステージ2（タイトル類似度クラスタリング）で3つに減ったことを示します。`dedup_threshold` の値を変えながら実行し、ログメッセージと生成されるHTMLメール (`output/news_digest_*.html`) の内容を比較することで、重複排除の精度を検証できます。
-
-### 5. クリーンアップ
-
-検証が終わったら、`src/deduplicator.py` で解除したコメントアウトを必ず元に戻してください。これにより、通常のRSSフィードからの記事取得が再開されます。
+`config.yaml` の `llm.dedup_threshold` の値を調整して実行・確認を繰り返します。

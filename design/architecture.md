@@ -17,7 +17,7 @@ This document defines the system architecture for the RSS News Filtering System.
                             | triggers every 24h
                             v
 +------------------+    +-------------------+    +------------------+
-|  feedly_rss.opml | -> |  RSS Fetcher      | -> |  Article List    |
+|  default_rss.opml| -> |  RSS Fetcher      | -> |  Article List    |
 |  (feed sources)  |    |  (feedparser)     |    |  (raw articles)  |
 +------------------+    +-------------------+    +--------+---------+
                                                          |
@@ -45,6 +45,12 @@ This document defines the system architecture for the RSS News Filtering System.
                                                +-------------------+
                                                |  Email Sender     |
                                                |  (Gmail SMTP)     |
+                                               +---------+---------+
+                                                         |
+                                                         v
+                                               +-------------------+
+                                               |  Auto Shutdown    |
+                                               |  (Optional)       |
                                                +---------+---------+
                                                          |
                                                          v
@@ -77,7 +83,7 @@ This document defines the system architecture for the RSS News Filtering System.
 
 ### 2. RSS Fetcher
 
-**Input:** `feedly_rss.opml`
+**Input:** `default_rss.opml` (Configurable via `feeds.opml_file`)
 
 **Output:** List of articles with metadata
 
@@ -333,6 +339,19 @@ def send_email(
 
 ---
 
+### 7. Auto Shutdown
+
+**Responsibility:** Shut down the system after successful completion
+
+**Logic:**
+1. Wait for 5 minutes (300 seconds) to allow logs to be flushed and give user a chance to cancel.
+2. Execute `poweroff` command.
+
+**Configuration:**
+- `system.poweroff_after_run: bool` (default: false)
+
+---
+
 ## Configuration File
 
 **File:** `config.yaml`
@@ -345,7 +364,7 @@ def send_email(
 ```yaml
 # RSS Feed Configuration
 feeds:
-  opml_file: "feedly_rss.opml"
+  opml_file: "default_rss.opml"
   timeout_seconds: 10
   skip_feedly_proxy: true
 
@@ -385,6 +404,10 @@ output:
   html_dir: "./output"
   log_file: "./logs/news_filter.log"
   state_file: "./state/last_run.json"  # For failure recovery
+
+# System Configuration
+system:
+  poweroff_after_run: false  # Set to true to shut down PC after completion
 ```
 
 **Environment Variables (`.env`):**
@@ -445,44 +468,40 @@ OLLAMA_BASE_URL=http://localhost:11434
 
 ```
 news_filtering/
-├── config.yaml              # Configuration
-├── .env                     # Secrets (git-ignored)
-├── .env.example             # Template for .env
-├── feedly_rss.opml          # RSS feed sources
-├── requirements.txt         # Python dependencies
-│
+├── design/
+│   ├── architecture.md       # システムアーキテクチャ設計 (This file)
+│   ├── architecture_review.md # 設計レビュー結果
+│   └── review_artifact/      # 実行後の評価資料
+│       ├── final_review.md   # 最終評価レポート
+│       ├── refactor_24h.md   # リファクタリング計画
+│       └── issue_list.md     # 修正事項リスト
+├── session_summaries/
+│   └── session_summary_*.md  # 毎セッションの作業記録
 ├── src/
-│   ├── __init__.py
-│   ├── main.py              # Entry point
-│   ├── rss_fetcher.py       # OPML parsing + RSS fetching
-│   ├── time_filter.py       # Filter by publication date
-│   ├── deduplicator.py      # LLM-based deduplication
-│   ├── html_builder.py      # HTML email generation
-│   ├── email_sender.py      # Gmail SMTP sending
-│   └── config.py            # Configuration loading
-│
+│   ├── __init__.py           # Article データクラス
+│   ├── main.py               # エントリーポイント (CLI)
+│   ├── config.py             # 設定読み込み
+│   ├── rss_fetcher.py        # OPML 解析 + RSS 取得
+│   ├── time_filter.py        # 時間フィルタリング
+│   ├── deduplicator.py       # 2段階重複排除 (URL + Ollama embedding)
+│   ├── html_builder.py       # HTML メール生成
+│   └── email_sender.py       # Gmail SMTP 送信
 ├── templates/
-│   └── email.html           # HTML email template (Jinja2)
-│
-├── state/                   # Runtime state (git-ignored)
-│   └── last_run.json        # Timestamp of last successful run
-│
-├── output/                  # Generated HTML files (git-ignored)
-├── logs/                    # Log files (git-ignored)
-│
+│   ├── email.html            # HTML メールテンプレート (Jinja2)
+│   └── error.html            # エラー通知テンプレート (Jinja2)
 ├── tests/
-│   ├── test_rss_fetcher.py
-│   ├── test_time_filter.py
-│   ├── test_deduplicator.py
-│   ├── test_html_builder.py
-│   ├── test_email_sender.py
-│   └── test_integration.py
-│
-├── agent_roles.md           # Agent role assignments
-├── architecture.md          # This file (system architecture)
-├── workflow.md              # Agent workflow definition
-├── architecture_review.md   # Architecture review results
-└── test_plan.md             # Test plan
+│   ├── test_*.py             # ユニットテスト・統合テスト
+│   ├── test_data_template.py # 精度検証用テンプレート
+│   ├── test_plan.md           # テスト計画書
+│   └── test_results.md        # テスト結果レポート
+├── config.yaml               # 設定ファイル
+├── .env                      # 認証情報 (git 管理外)
+├── .env.example              # .env のテンプレート
+├── default_rss.opml          # RSS フィード一覧
+├── workflow.md               # ワークフロー定義
+├── workflow_state.json       # ワークフロー状態管理
+├── agent_roles.md            # エージェント役割分担
+└── requirements.txt          # Python 依存関係
 ```
 
 ---

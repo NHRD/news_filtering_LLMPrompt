@@ -2,6 +2,8 @@
 
 import argparse
 import logging
+import subprocess
+import time
 from datetime import timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -64,6 +66,25 @@ def _write_html_if_needed(config: AppConfig, html: str) -> None:
     out_file = out_dir / f"news_digest_{now_utc().strftime('%Y%m%d_%H%M%S')}.html"
     out_file.write_text(html, encoding="utf-8")
     logging.info("[HTML Builder] Saved HTML to %s", out_file)
+
+
+def _handle_post_run_system_actions(config: AppConfig) -> None:
+    if not config.system.poweroff_after_run:
+        return
+
+    wait_minutes = 5
+    logging.info("[System] Pipeline completed. System will shut down in %s minutes.", wait_minutes)
+    logging.info("[System] Press Ctrl+C to abort shutdown if running interactively.")
+    
+    try:
+        time.sleep(wait_minutes * 60)
+        logging.info("[System] Executing poweroff...")
+        # Executing 'poweroff' without sudo as per user configuration
+        subprocess.run(["poweroff"], check=True)
+    except KeyboardInterrupt:
+        logging.info("[System] Shutdown aborted by user.")
+    except Exception as e:
+        logging.error("[System] Failed to execute shutdown: %s", e)
 
 
 def run_pipeline(config, dry_run=False, fetch_only=False, force=False):
@@ -130,17 +151,31 @@ def run_pipeline(config, dry_run=False, fetch_only=False, force=False):
     window_end = now_utc().astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     subject = f"News Digest | {len(capped)} articles | {window_start} - {window_end}"
 
+    pipeline_success = False
     if dry_run:
         logging.info("[Main] Dry-run mode: email not sent")
+        pipeline_success = True
     else:
         if not capped:
             logging.info("[Main] No articles to send")
+            pipeline_success = True
         else:
-            send_email(config.email, subject, html)
+            try:
+                if send_email(config.email, subject, html):
+                    pipeline_success = True
+            except Exception as exc:
+                logging.error("[Main] Failed to send email: %s", exc)
+                return 1
 
-    save_last_run_timestamp(config.output.state_file, now_utc())
-    logging.info("[Main] Cycle completed successfully")
-    return 0
+    if pipeline_success:
+        save_last_run_timestamp(config.output.state_file, now_utc())
+        logging.info("[Main] Cycle completed successfully")
+        
+        # Optional shutdown only on full success
+        _handle_post_run_system_actions(config)
+        return 0
+    
+    return 1
 
 
 def main():
