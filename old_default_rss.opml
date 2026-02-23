@@ -36,18 +36,9 @@
             <outline type="rss" text="Autoblog News" title="Autoblog News" xmlUrl="http://www.autoblog.com/rss.xml" htmlUrl="https://www.autoblog.com"/>
             <outline type="rss" text="Electrek" title="Electrek" xmlUrl="http://electrek.co/feed/" htmlUrl="https://electrek.co/"/>
             <outline type="rss" text="Car News | Latest Motoring Headlines | Cars UK" title="Car News | Latest Motoring Headlines | Cars UK" xmlUrl="http://www.carsuk.net/feed/" htmlUrl="https://www.carsuk.net/car-news/"/>
-            <outline type="rss" text="note #AI" title="note #AI" xmlUrl="https://note.com/hashtag/ai/rss" htmlUrl="https://note.com/hashtag/ai"/>
-            <outline type="rss" text="note #自動運転" title="note #自動運転" xmlUrl="https://note.com/hashtag/%E8%87%AA%E5%8B%95%E9%81%8B%E8%BB%A2/rss" htmlUrl="https://note.com/hashtag/%E8%87%AA%E5%8B%95%E9%81%8B%E8%BB%A2"/>
-            <outline type="rss" text="SemiAnalysis" title="SemiAnalysis" xmlUrl="https://newsletter.semianalysis.com/feed" htmlUrl="https://newsletter.semianalysis.com/"/>
-            <outline type="rss" text="Gary Marcus" title="Gary Marcus" xmlUrl="https://garymarcus.substack.com/feed" htmlUrl="https://garymarcus.substack.com/"/>
-            <outline type="rss" text="AI Futures" title="AI Futures" xmlUrl="https://blog.ai-futures.org/feed" htmlUrl="https://blog.ai-futures.org/"/>
-            <outline type="rss" text="Give a Fig" title="Give a Fig" xmlUrl="https://www.yesigiveafig.com/feed" htmlUrl="https://www.yesigiveafig.com/"/>
-            <outline type="rss" text="Deep Learning Focus (Cameron R. Wolfe)" title="Deep Learning Focus" xmlUrl="https://cameronrwolfe.substack.com/feed" htmlUrl="https://cameronrwolfe.substack.com/"/>
-            <outline type="rss" text="The Verge" title="The Verge" xmlUrl="https://www.theverge.com/rss/index.xml" htmlUrl="https://www.theverge.com"/>
         </outline>
         
         <outline text="Finance" title="Finance">
-            <outline type="rss" text="Michael Burry Archive" title="Michael Burry Archive" xmlUrl="https://michaeljburry.substack.com/feed" htmlUrl="https://michaeljburry.substack.com/"/>
             <outline type="rss" text="CNBC" title="CNBC" xmlUrl="http://www.newslookup.com/rss/business/cnbc.rss" htmlUrl="http://www.cnbc.com/"/>
             <outline type="rss" text="OilPrice" title="OilPrice" xmlUrl="http://feeds.feedburner.com/oilpricecom" htmlUrl="https://oilprice.com/rss/main"/>
             <outline type="rss" text="Nick Timiraos / @NickTimiraos" title="Nick Timiraos / @NickTimiraos" xmlUrl="https://nitter.it/NickTimiraos/rss" htmlUrl="https://nitter.it/NickTimiraos"/>
@@ -62,14 +53,19 @@
             <outline type="rss" text="CFO" title="CFO" xmlUrl="http://ww2.cfo.com/feed/" htmlUrl="https://www.cfo.com"/>
             <outline type="rss" text="Top News on Seeking Alpha" title="Top News on Seeking Alpha" xmlUrl="http://seekingalpha.com/news/top-news/feed" htmlUrl="https://seekingalpha.com/news/top-news"/>
             <outline type="rss" text="Economic &amp; financial indicators" title="Economic &amp; financial indicators" xmlUrl="http://www.economist.com/rss/indicators_rss.xml" htmlUrl="https://www.economist.com/economic-and-financial-indicators"/>
+            <outline type="rss" text="JE$US / @WallStJesus" title="JE$US / @WallStJesus" xmlUrl="https://nitter.net/WallStJesus/rss" htmlUrl="https://nitter.net/WallStJesus"/>
             <outline type="rss" text="Business" title="Business" xmlUrl="http://www.economist.com/rss/business_rss.xml" htmlUrl="https://www.economist.com/business"/>
             <outline type="rss" text="Barron's / @barronsonline" title="Barron's / @barronsonline" xmlUrl="https://nitter.net/barronsonline/rss" htmlUrl="https://nitter.net/barronsonline"/>
+            <outline type="rss" text="AAII SentimentSurvey / @AAIISentiment" title="AAII SentimentSurvey / @AAIISentiment" xmlUrl="https://nitter.net/AAIISentiment/rss" htmlUrl="https://nitter.net/AAIISentiment"/>
             <outline type="rss" text="ロイター 経済" title="ロイター 経済" xmlUrl="https://assets.wor.jp/rss/rdf/reuters/economy.rdf" htmlUrl="https://jp.reuters.com/economy/"/>
+            <outline type="rss" text="First Squawk / @FirstSquawk" title="First Squawk / @FirstSquawk" xmlUrl="https://nitter.it/FirstSquawk/rss" htmlUrl="https://nitter.it/FirstSquawk"/>
             <outline type="rss" text="Market Overview" title="Market Overview" xmlUrl="http://www.investing.com/rss/market_overview.rss" htmlUrl="https://www.investing.com"/>
             <outline type="rss" text="Ledge.ai" title="Ledge.ai" xmlUrl="https://ledge.ai/feed/" htmlUrl="https://ledge.ai"/>
             <outline type="rss" text="Semiaccurate" title="Semiaccurate" xmlUrl="http://semiaccurate.com/feed/" htmlUrl="https://www.semiaccurate.com/"/>
             <outline type="rss" text="Modular Money" title="Modular Money" xmlUrl="https://modularmoney.co/feed/" htmlUrl="https://modularmoney.co"/>
+            <outline type="rss" text="*Walter Bloomberg / @DeItaone" title="*Walter Bloomberg / @DeItaone" xmlUrl="https://nitter.net/DeItaone/rss" htmlUrl="https://nitter.net/DeItaone"/>
             <outline type="rss" text="日本経済新聞" title="日本経済新聞" xmlUrl="https://rsshub.app/nikkei/index" htmlUrl="https://www.nikkei.com"/>
+            <outline type="rss" text="あんこん / @UnconstrainedI" title="あんこん / @UnconstrainedI" xmlUrl="https://nitter.it/UnconstrainedI/rss" htmlUrl="https://nitter.it/UnconstrainedI"/>
             <outline type="rss" text="zerohedge / @zerohedge" title="zerohedge / @zerohedge" xmlUrl="https://nitter.it/zerohedge/rss" htmlUrl="https://nitter.it/zerohedge"/>
         </outline>
     </body>
