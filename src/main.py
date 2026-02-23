@@ -72,7 +72,7 @@ def _handle_post_run_system_actions(config: AppConfig) -> None:
     if not config.system.poweroff_after_run:
         return
 
-    wait_minutes = 5
+    wait_minutes = 3
     logging.info("[System] Pipeline completed. System will shut down in %s minutes.", wait_minutes)
     logging.info("[System] Press Ctrl+C to abort shutdown if running interactively.")
     
