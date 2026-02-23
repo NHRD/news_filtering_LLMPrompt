@@ -116,23 +116,26 @@ RSS フィード一覧（OPMLファイル）をプロジェクトディレクト
 ---
 
 ## 自動シャットダウン機能
+config.yaml の system.poweroff_after_run を`true`に設定すると正常にメール送信が完了した後3分間の待機を経てシャットダウンコマンドを実行します。
+待機時間（3分）の間に Ctrl+C を押すことで、シャットダウンをキャンセルできます。
 
-`config.yaml` の `system.poweroff_after_run` を `true` に設定すると、正常にメール送信（またはドライランでのHTML保存）が完了した後、3分間の待機を経て `sudo -n /usr/sbin/poweroff` コマンドを実行します。
+### OS側の設定（重要：パスワードなしでの実行許可）
+Pythonスクリプト（特に venv 環境）から`sudo`経由で電源を切る場合、OS側のセキュリティ設定(sudoers)を正しく構成する必要があります。
+設定の記述場所やコマンドのパスが異なると、パスワードを要求されて処理が失敗します。
+ターミナルで`sudo visudo`コマンドを実行します。
+**ファイルの最下行（重要）**に以下を追記します。
+```bash
+# username はご自身のユーザー名に書き換えてください
+username ALL=(ALL) NOPASSWD: /usr/bin/systemctl poweroff, /usr/bin/systemctl
+```
+※ sudoers は下の行の設定が上の設定を上書きするため、必ず %sudo などのグループ設定よりも後に記述してください。
 
-- 待機時間（3分）の間に `Ctrl+C` を押すことで、シャットダウンをキャンセルできます。
-
-### OS側の設定（パスワードなしでの実行許可）
-
-スクリプトから自動でシャットダウンを行うには、`sudo -n /usr/sbin/poweroff` コマンドをパスワードなしで実行できるように設定する必要があります。以下の手順で設定を行ってください。
-
-1. ターミナルで `sudo visudo` コマンドを実行します。
-2. ファイルの末尾に以下の一行を追記します（`username` はご自身のPCのユーザー名に変えてください）。
+### 設定の反映確認
+設定保存後、以下のコマンドを実行してパスワードを聞かれずにヘルプ画面が表示されれば設定完了です。
 
 ```bash
-username ALL=(ALL) NOPASSWD: /usr/sbin/poweroff
+sudo -n /usr/bin/systemctl poweroff --help
 ```
-
-※ 環境によってはパスが `/sbin/poweroff` の場合があります。`which poweroff` コマンドで正しいパスを確認してください。
 
 ## 障害時の動作
 
