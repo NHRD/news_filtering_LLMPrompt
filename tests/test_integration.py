@@ -9,6 +9,7 @@ from src.config import (
     LLMConfig,
     OutputConfig,
     ScheduleConfig,
+    SystemConfig,
 )
 from src.deduplicator import DeduplicationError, deduplicate_articles
 from src.email_sender import send_email
@@ -38,6 +39,7 @@ def _config(tmp_path):
             log_file=str(tmp_path / "logs/news.log"),
             state_file=str(tmp_path / "state/last_run.json"),
         ),
+        system=SystemConfig(poweroff_after_run=False),
     )
 
 
@@ -99,6 +101,7 @@ def test_it_002_1_filter_then_deduplicate(monkeypatch):
         deduplication=DeduplicationConfig([]),
         email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),
         output=OutputConfig(True, "./output", "./logs/x.log", "./state/x.json"),
+        system=SystemConfig(poweroff_after_run=False),
     )
 
     deduped = deduplicate_articles(articles, cfg)
@@ -126,6 +129,7 @@ def test_it_002_2_dedup_with_ollama_running(monkeypatch):
         deduplication=DeduplicationConfig([]),
         email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),
         output=OutputConfig(True, "./output", "./logs/x.log", "./state/x.json"),
+        system=SystemConfig(poweroff_after_run=False),
     )
 
     deduplicate_articles(articles, cfg)

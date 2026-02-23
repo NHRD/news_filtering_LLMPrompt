@@ -13,6 +13,7 @@ from src.config import (
     LLMConfig,
     OutputConfig,
     ScheduleConfig,
+    SystemConfig,
 )
 from src.deduplicator import DeduplicationError, _dedup_by_exact_url, deduplicate_articles
 
@@ -40,6 +41,7 @@ def _config(preferred_sources=None, threshold=0.85):
             max_articles_per_email=200,
         ),
         output=OutputConfig(save_html=True, html_dir="./output", log_file="./logs/news_filter.log", state_file="./state/last_run.json"),
+        system=SystemConfig(poweroff_after_run=False),
     )
 
 

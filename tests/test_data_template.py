@@ -78,6 +78,7 @@ generated_test_articles = [
         title=data["title"],
         published=current_time - datetime.timedelta(hours=data.get("published_offset_hours", 0)),
         source=data["source"],
-        link=data["link"]
+        link=data["link"],
+        category=data.get("category", "Uncategorized")
     ) for data in test_articles_data
 ]

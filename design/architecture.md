@@ -344,8 +344,8 @@ def send_email(
 **Responsibility:** Shut down the system after successful completion
 
 **Logic:**
-1. Wait for 5 minutes (300 seconds) to allow logs to be flushed and give user a chance to cancel.
-2. Execute `poweroff` command.
+1. Wait for 3 minutes (180 seconds) to allow logs to be flushed and give user a chance to cancel.
+2. Execute `sudo -n /usr/sbin/poweroff` command.
 
 **Configuration:**
 - `system.poweroff_after_run: bool` (default: false)
