@@ -42,4 +42,4 @@ output:
 
 # System Configuration
 system:
-  poweroff_after_run: false
+  poweroff_after_run: true
