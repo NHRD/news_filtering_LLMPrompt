@@ -31,7 +31,7 @@ email:
   recipients:
     - "${PERSONAL_EMAIL}"
     - "${COMPANY_EMAIL}"
-  max_articles_per_email: 200
+  max_articles_per_email: 300
 
 # Output Configuration
 output:
