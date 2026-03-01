@@ -53,6 +53,22 @@ class SystemConfig(NamedTuple):
     poweroff_after_run: bool
 
 
+class MailingListEntry(NamedTuple):
+    name: str      # Article.source に使用
+    category: str  # Article.category に使用 (HTML グルーピング用)
+    label: str     # Gmail ラベル名
+
+
+class MailFetchConfig(NamedTuple):
+    enabled: bool
+    imap_server: str
+    imap_port: int
+    imap_user: str      # GMAIL_ADDRESS から取得
+    imap_password: str  # GMAIL_APP_PASSWORD から取得
+    timeout_seconds: int
+    lists: List[MailingListEntry]
+
+
 class AppConfig(NamedTuple):
     feeds: FeedConfig
     schedule: ScheduleConfig
@@ -61,6 +77,7 @@ class AppConfig(NamedTuple):
     email: EmailConfig
     output: OutputConfig
     system: SystemConfig
+    mail_fetch: MailFetchConfig
 
 
 def _resolve_env(value: Any) -> Any:
@@ -98,6 +115,18 @@ def load_config(path: str = "config.yaml") -> AppConfig:
     email = cfg.get("email", {})
     output = cfg.get("output", {})
     system = cfg.get("system", {})
+    mail_raw = cfg.get("mailing_lists", {})
+
+    sender_email = _require(email.get("sender_email", ""), "email.sender_email")
+    sender_password = _require(email.get("sender_password", ""), "email.sender_password")
+
+    mail_lists = []
+    for entry in mail_raw.get("lists", []):
+        mail_lists.append(MailingListEntry(
+            name=entry.get("name", ""),
+            category=entry.get("category", "Mailing Lists"),
+            label=entry.get("label", ""),
+        ))
 
     return AppConfig(
         feeds=FeedConfig(
@@ -120,8 +149,8 @@ def load_config(path: str = "config.yaml") -> AppConfig:
         email=EmailConfig(
             smtp_server=email.get("smtp_server", "smtp.gmail.com"),
             smtp_port=int(email.get("smtp_port", 587)),
-            sender_email=_require(email.get("sender_email", ""), "email.sender_email"),
-            sender_password=_require(email.get("sender_password", ""), "email.sender_password"),
+            sender_email=sender_email,
+            sender_password=sender_password,
             recipients=[r for r in email.get("recipients", []) if r],
             max_articles_per_email=int(email.get("max_articles_per_email", 200)),
         ),
@@ -133,5 +162,14 @@ def load_config(path: str = "config.yaml") -> AppConfig:
         ),
         system=SystemConfig(
             poweroff_after_run=bool(system.get("poweroff_after_run", False)),
+        ),
+        mail_fetch=MailFetchConfig(
+            enabled=bool(mail_raw.get("enabled", False)),
+            imap_server=mail_raw.get("imap_server", "imap.gmail.com"),
+            imap_port=int(mail_raw.get("imap_port", 993)),
+            imap_user=sender_email,
+            imap_password=sender_password,
+            timeout_seconds=int(mail_raw.get("timeout_seconds", 30)),
+            lists=mail_lists,
         ),
     )

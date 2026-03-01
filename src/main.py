@@ -13,8 +13,10 @@ try:
     from .deduplicator import DeduplicationError, deduplicate_articles
     from .email_sender import send_email
     from .html_builder import build_email_html, build_error_html
+    from .mail_fetcher import fetch_mail_articles
     from .rss_fetcher import fetch_articles, parse_opml
     from .time_filter import (
+        compute_cutoff,
         filter_recent_articles,
         load_last_run_timestamp,
         now_utc,
@@ -25,8 +27,10 @@ except ImportError:  # pragma: no cover
     from deduplicator import DeduplicationError, deduplicate_articles
     from email_sender import send_email
     from html_builder import build_email_html, build_error_html
+    from mail_fetcher import fetch_mail_articles
     from rss_fetcher import fetch_articles, parse_opml
     from time_filter import (
+        compute_cutoff,
         filter_recent_articles,
         load_last_run_timestamp,
         now_utc,
@@ -94,13 +98,32 @@ def run_pipeline(config, dry_run=False, fetch_only=False, force=False):
     feeds = parse_opml(config.feeds.opml_file, skip_feedly_proxy=config.feeds.skip_feedly_proxy)
     logging.info("[RSS Fetcher] Found %s unique feeds in OPML", len(feeds))
 
-    articles = fetch_articles(feeds, timeout_seconds=config.feeds.timeout_seconds)
-    logging.info("[RSS Fetcher] Fetched %s articles", len(articles))
+    rss_articles = fetch_articles(feeds, timeout_seconds=config.feeds.timeout_seconds)
+    logging.info("[RSS Fetcher] Fetched %s articles", len(rss_articles))
+
+    # Compute cutoff once; used for IMAP SINCE and then passed to filter_recent_articles
+    last_run = load_last_run_timestamp(config.output.state_file)
+    cutoff = compute_cutoff(
+        time_window_hours=config.schedule.time_window_hours,
+        last_run=last_run,
+        force=force,
+    )
+
+    # Fetch mailing list articles (graceful degradation: failures return empty list)
+    mail_articles = fetch_mail_articles(config.mail_fetch, cutoff=cutoff)
+
+    articles = rss_articles + mail_articles
+    logging.info(
+        "[Main] Combined: %d RSS + %d mail articles (total: %d)",
+        len(rss_articles),
+        len(mail_articles),
+        len(articles),
+    )
+
     if not articles:
         logging.info("[Main] No articles fetched")
         return 0
 
-    last_run = load_last_run_timestamp(config.output.state_file)
     recent_articles, cutoff = filter_recent_articles(
         articles=articles,
         time_window_hours=config.schedule.time_window_hours,

@@ -11,6 +11,7 @@ from src.config import (
     EmailConfig,
     FeedConfig,
     LLMConfig,
+    MailFetchConfig,
     OutputConfig,
     ScheduleConfig,
     SystemConfig,
@@ -42,6 +43,7 @@ def _config(preferred_sources=None, threshold=0.85):
         ),
         output=OutputConfig(save_html=True, html_dir="./output", log_file="./logs/news_filter.log", state_file="./state/last_run.json"),
         system=SystemConfig(poweroff_after_run=False),
+        mail_fetch=MailFetchConfig(enabled=False, imap_server="imap.gmail.com", imap_port=993, imap_user="", imap_password="", timeout_seconds=30, lists=[]),
     )
 
 
@@ -66,7 +68,20 @@ def test_ut_004_2_keep_most_recent():
     assert deduped == [new]
 
 
-def test_ut_004_3_handle_all_unique():
+def test_ut_004_3_keep_empty_links():
+    articles = [
+        _article("mail1", "", hours_ago=3),
+        _article("mail2", "", hours_ago=2),
+        _article("mail3", "", hours_ago=1),
+    ]
+
+    deduped = _dedup_by_exact_url(articles)
+
+    assert len(deduped) == 3
+    assert [a.title for a in deduped] == ["mail1", "mail2", "mail3"]
+
+
+def test_ut_004_4_handle_all_unique():
     articles = [_article("a", "https://example.com/1"), _article("b", "https://example.com/2")]
 
     deduped = _dedup_by_exact_url(articles)

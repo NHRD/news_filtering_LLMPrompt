@@ -4,14 +4,15 @@ from src import Article
 from src.html_builder import build_email_html
 
 
-def _article(title, category="Tech", hours_ago=0):
+def _article(title, category="Tech", hours_ago=0, link=None, body=""):
     base = datetime(2026, 2, 17, 12, 0, tzinfo=timezone.utc)
     return Article(
         title=title,
-        link=f"https://example.com/{title.replace(' ', '-')}".lower(),
+        link=link if link is not None else f"https://example.com/{title.replace(' ', '-')}".lower(),
         published=base - timedelta(hours=hours_ago),
         source="Source",
         category=category,
+        body=body,
     )
 
 
@@ -54,3 +55,18 @@ def test_ut_006_6_truncation_message_display():
     html = build_email_html([_article("A")], truncation_message=msg)
 
     assert msg in html
+
+
+def test_ut_006_7_render_inline_body():
+    body_text = "This is a secret message.\nMultiple lines."
+    html = build_email_html([_article("Body Test", body=body_text)])
+
+    assert body_text in html
+    assert "article-body" in html
+
+
+def test_ut_006_8_render_without_link():
+    html = build_email_html([_article("No Link Test", link="")])
+
+    assert "No Link Test" in html
+    assert 'href=""' not in html

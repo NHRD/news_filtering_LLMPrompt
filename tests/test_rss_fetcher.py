@@ -174,3 +174,25 @@ def test_ut_002_5_handle_missing_date(monkeypatch, caplog):
     # Articles without a valid date are excluded by the implementation
     assert len(articles) == 0
     assert "Skip article without valid published_date" in caplog.text
+
+
+def test_ut_002_6_handle_naive_date_string(monkeypatch, caplog):
+    feeds = [FeedSource(url="https://example.com/rss", name="NaiveDateFeed", category="Tech")]
+
+    class Parsed:
+        entries = [
+            {
+                "title": "Naive",
+                "link": "https://example.com/naive",
+                # No timezone info (GMT/UTC)
+                "published": "Tue, 13 Feb 2024 10:00:00",
+            }
+        ]
+
+    monkeypatch.setattr("src.rss_fetcher.feedparser.parse", lambda *args, **kwargs: Parsed())
+
+    articles = fetch_articles(feeds)
+
+    assert len(articles) == 1
+    assert articles[0].published == datetime(2024, 2, 13, 10, 0, tzinfo=timezone.utc)
+    assert "Naive date string assumed UTC" in caplog.text

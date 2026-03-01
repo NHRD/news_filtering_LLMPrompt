@@ -33,6 +33,18 @@ def _base_yaml(sender="${GMAIL_ADDRESS}", password="${GMAIL_APP_PASSWORD}"):
           html_dir: ./output
           log_file: ./logs/news_filter.log
           state_file: ./state/last_run.json
+        mailing_lists:
+          enabled: true
+          imap_server: imap.gmail.com
+          imap_port: 993
+          timeout_seconds: 30
+          lists:
+            - name: Example List
+              category: Mailing Lists
+              label: example-list
+            - name: Security ML
+              category: Security
+              label: ml/security
         """
     )
 
@@ -47,6 +59,8 @@ def test_ut_008_1_load_config_yaml(tmp_path, monkeypatch):
 
     assert cfg.email.sender_email == "sender@example.com"
     assert cfg.schedule.time_window_hours == 24
+    assert cfg.mail_fetch.enabled is True
+    assert len(cfg.mail_fetch.lists) == 2
 
 
 def test_ut_008_2_expand_env_vars(tmp_path, monkeypatch):
@@ -84,3 +98,31 @@ def test_ut_008_5_preferred_sources_loading(tmp_path, monkeypatch):
     cfg = load_config(str(cfg_file))
 
     assert "Reuters" in cfg.deduplication.preferred_sources
+
+
+def test_ut_008_6_parse_mailing_lists(tmp_path, monkeypatch):
+    monkeypatch.setenv("GMAIL_ADDRESS", "sender@example.com")
+    monkeypatch.setenv("GMAIL_APP_PASSWORD", "pass")
+    cfg_file = tmp_path / "config.yaml"
+    cfg_file.write_text(_base_yaml(), encoding="utf-8")
+
+    cfg = load_config(str(cfg_file))
+
+    first = cfg.mail_fetch.lists[0]
+    second = cfg.mail_fetch.lists[1]
+    assert first.name == "Example List"
+    assert first.label == "example-list"
+    assert second.name == "Security ML"
+    assert second.label == "ml/security"
+
+
+def test_ut_008_7_copy_imap_credentials_from_email(tmp_path, monkeypatch):
+    monkeypatch.setenv("GMAIL_ADDRESS", "env-sender@example.com")
+    monkeypatch.setenv("GMAIL_APP_PASSWORD", "env-pass")
+    cfg_file = tmp_path / "config.yaml"
+    cfg_file.write_text(_base_yaml(), encoding="utf-8")
+
+    cfg = load_config(str(cfg_file))
+
+    assert cfg.mail_fetch.imap_user == cfg.email.sender_email
+    assert cfg.mail_fetch.imap_password == cfg.email.sender_password

@@ -40,6 +40,17 @@
       font-size: 0.85em;
       color: #666;
     }
+    .article-body {
+      white-space: pre-wrap;
+      margin-top: 10px;
+      font-size: 0.95em;
+      line-height: 1.5;
+      color: #3c4043;
+      border-left: 3px solid #1a73e8;
+      padding: 8px 12px;
+      background: #fff;
+      border-radius: 4px;
+    }
     .footer {
       font-size: 0.8em;
       color: #666;
@@ -63,9 +74,16 @@
     {% for article in category.articles %}
     <div class="article">
       <div class="article-title">
+        {% if article.link %}
         <a href="{{ article.link }}" class="article-link">{{ article.title }}</a>
+        {% else %}
+        {{ article.title }}
+        {% endif %}
       </div>
       <div class="article-meta">{{ article.source }} | {{ article.published.strftime('%Y-%m-%d %H:%M UTC') }}</div>
+      {% if article.body %}
+      <div class="article-body">{{ article.body }}</div>
+      {% endif %}
     </div>
     {% endfor %}
   </div>

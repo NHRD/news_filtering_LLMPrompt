@@ -42,4 +42,23 @@ output:
 
 # System Configuration
 system:
-  poweroff_after_run: true
+  poweroff_after_run: false
+
+# Mailing List Configuration (Gmail IMAP)
+mailing_lists:
+  enabled: true           # true にするとメーリングリスト取得を有効化
+  imap_server: "imap.gmail.com"
+  imap_port: 993
+  timeout_seconds: 30
+  # 認証情報は email.sender_email / email.sender_password (GMAIL_ADDRESS / GMAIL_APP_PASSWORD) を流用
+
+  lists:
+    # FROM アドレスで識別する例
+    # - name: "Example List"
+    #   category: "Mailing Lists"
+    #   match_by: "from"
+    #   address: "example-list@googlegroups.com"
+
+    - name: "Tech mailing list"
+      category: "Tech news"
+      label: "Tech news"

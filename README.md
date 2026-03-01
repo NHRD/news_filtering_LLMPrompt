@@ -1,15 +1,19 @@
 # RSS News Filtering System
 
-RSS フィードから過去24時間以内の記事を取得し、Ollama による類似記事の重複排除を行い、カテゴリ別の HTML ダイジェストメールを Gmail で送信するシステム。
+RSS フィードおよび Gmail メーリングリストから過去24時間以内の記事を取得し、Ollama による類似記事の重複排除を行い、カテゴリ別の HTML ダイジェストメールを Gmail で送信するシステム。
 
 ## 処理フロー
 
 ```
 OPML (フィード一覧)
-  → RSS 取得 (feedparser)
+  → RSS 取得 (feedparser)          ─┐
+                                     ├─ 結合
+Gmail IMAP (メーリングリスト)         ─┘
+  → メール取得 (imaplib)
   → 時間フィルタ (過去24時間)
   → 重複排除 (URL完全一致 + Ollama embedding による類似度クラスタリング)
   → HTML メール生成 (Jinja2)
+    ※ メーリングリスト記事は本文テキストをダイジェストにインライン埋め込み
   → Gmail SMTP 送信
 ```
 
@@ -113,6 +117,47 @@ RSS フィード一覧（OPMLファイル）をプロジェクトディレクト
 |---|---|---|
 | `poweroff_after_run` | `false` | `true` に設定すると、全処理が正常完了した 3 分後に PC を自動シャットダウンします。 |
 
+### 7. メーリングリスト設定 (`mailing_lists`)
+
+Gmail に届くメーリングリストのメール内容を RSS フィードと同様にスクリーニング対象へ追加できます。
+
+| 項目 | デフォルト | 説明 |
+|---|---|---|
+| `enabled` | `false` | `true` にするとメーリングリスト取得を有効化します。 |
+| `imap_server` | `imap.gmail.com` | IMAP サーバーのアドレス。 |
+| `imap_port` | `993` | IMAP ポート番号 (SSL)。 |
+| `timeout_seconds` | `30` | IMAP 接続タイムアウト時間。 |
+| `lists[].name` | — | Article のソース名として使用されます。 |
+| `lists[].category` | — | HTML ダイジェストのカテゴリ分類に使用されます。 |
+| `lists[].label` | — | 取得対象の Gmail ラベル名。スペースを含む場合もそのまま記載できます。 |
+
+**認証情報は既存の `GMAIL_ADDRESS` / `GMAIL_APP_PASSWORD` を流用するため、新規設定は不要です。**
+
+#### 設定例
+
+```yaml
+mailing_lists:
+  enabled: true
+  imap_server: "imap.gmail.com"
+  imap_port: 993
+  timeout_seconds: 30
+  lists:
+    - name: "Tech mailing list"
+      category: "Tech news"
+      label: "Tech news"          # Gmail に設定したラベル名
+```
+
+#### 事前準備
+
+1. Gmail 設定 > 転送とPOP/IMAP > **IMAP アクセス: 有効** を確認する。
+2. Gmail フィルターで対象のメーリングリストメールに**ラベルを付与する**設定を追加する。
+
+#### メール本文のインライン表示
+
+メーリングリスト記事は**外部リンクなし**で、メール本文テキストをダイジェスト HTML に
+直接埋め込みます。会社メールアドレスで受信したダイジェストから個人 Gmail へ誘導される
+問題を回避するための設計です。
+
 ---
 
 ## 自動シャットダウン機能
@@ -207,13 +252,14 @@ news_filtering/
 ├── session_summaries/
 │   └── session_summary_*.md  # 毎セッションの作業記録
 ├── src/
-│   ├── __init__.py           # Article データクラス
+│   ├── __init__.py           # Article データクラス (body フィールド含む)
 │   ├── main.py               # エントリーポイント (CLI)
 │   ├── config.py             # 設定読み込み
 │   ├── rss_fetcher.py        # OPML 解析 + RSS 取得
+│   ├── mail_fetcher.py       # Gmail IMAP メーリングリスト取得
 │   ├── time_filter.py        # 時間フィルタリング
 │   ├── deduplicator.py       # 2段階重複排除 (URL + Ollama embedding)
-│   ├── html_builder.py       # HTML メール生成
+│   ├── html_builder.py       # HTML メール生成 (body インライン表示対応)
 │   └── email_sender.py       # Gmail SMTP 送信
 ├── templates/
 │   ├── email.html            # HTML メールテンプレート (Jinja2)

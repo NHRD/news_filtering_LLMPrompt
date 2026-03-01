@@ -24,11 +24,16 @@ class DeduplicationError(Exception):
 def _dedup_by_exact_url(articles):
     # type: (List[Article]) -> List[Article]
     by_url = {}  # type: Dict[str, Article]
+    unique_articles = []  # type: List[Article]
     for article in articles:
+        if not article.link:
+            # Empty link (e.g. mail articles with no URL): always keep, never merge
+            unique_articles.append(article)
+            continue
         existing = by_url.get(article.link)
         if existing is None or article.published > existing.published:
             by_url[article.link] = article
-    return list(by_url.values())
+    return unique_articles + list(by_url.values())
 
 
 def _get_embedding(base_url, model, text, timeout_seconds=20):
