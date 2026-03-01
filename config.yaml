@@ -20,7 +20,7 @@ deduplication:
   preferred_sources:
     - "Reuters"
     - "Bloomberg"
-    - "WSJ"
+    - "WSJ.com"
 
 # Email Configuration
 email:
@@ -42,23 +42,19 @@ output:
 
 # System Configuration
 system:
-  poweroff_after_run: false
+  poweroff_after_run: true
 
 # Mailing List Configuration (Gmail IMAP)
+# 認証情報は email.sender_email / email.sender_password (GMAIL_ADDRESS / GMAIL_APP_PASSWORD) を流用
+# メール本文はダイジェスト HTML にインライン埋め込み (外部リンクなし)
 mailing_lists:
-  enabled: true           # true にするとメーリングリスト取得を有効化
+  enabled: true
   imap_server: "imap.gmail.com"
   imap_port: 993
   timeout_seconds: 30
-  # 認証情報は email.sender_email / email.sender_password (GMAIL_ADDRESS / GMAIL_APP_PASSWORD) を流用
 
   lists:
-    # FROM アドレスで識別する例
-    # - name: "Example List"
-    #   category: "Mailing Lists"
-    #   match_by: "from"
-    #   address: "example-list@googlegroups.com"
-
+    # label: Gmail ラベル名を指定。スペースあり可 (例: "Tech news")
     - name: "Tech mailing list"
       category: "Tech news"
       label: "Tech news"

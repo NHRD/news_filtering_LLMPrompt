@@ -36,7 +36,6 @@
             <outline type="rss" text="Autoblog News" title="Autoblog News" xmlUrl="http://www.autoblog.com/rss.xml" htmlUrl="https://www.autoblog.com"/>
             <outline type="rss" text="Electrek" title="Electrek" xmlUrl="http://electrek.co/feed/" htmlUrl="https://electrek.co/"/>
             <outline type="rss" text="Car News | Latest Motoring Headlines | Cars UK" title="Car News | Latest Motoring Headlines | Cars UK" xmlUrl="http://www.carsuk.net/feed/" htmlUrl="https://www.carsuk.net/car-news/"/>
-            <outline type="rss" text="note #AI" title="note #AI" xmlUrl="https://note.com/hashtag/ai/rss" htmlUrl="https://note.com/hashtag/ai"/>
             <outline type="rss" text="note #自動運転" title="note #自動運転" xmlUrl="https://note.com/hashtag/%E8%87%AA%E5%8B%95%E9%81%8B%E8%BB%A2/rss" htmlUrl="https://note.com/hashtag/%E8%87%AA%E5%8B%95%E9%81%8B%E8%BB%A2"/>
             <outline type="rss" text="SemiAnalysis" title="SemiAnalysis" xmlUrl="https://newsletter.semianalysis.com/feed" htmlUrl="https://newsletter.semianalysis.com/"/>
             <outline type="rss" text="Gary Marcus" title="Gary Marcus" xmlUrl="https://garymarcus.substack.com/feed" htmlUrl="https://garymarcus.substack.com/"/>
