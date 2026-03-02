@@ -52,7 +52,14 @@
             <outline type="rss" text="Global Market Intelligence &amp; Consulting | TrendForce" title="Global Market Intelligence &amp; Consulting | TrendForce" xmlUrl="https://www.trendforce.com/feed/Display.html" htmlUrl="https://www.trendforce.com"/>
             <outline type="rss" text="DRAMeXchange RSS Feed" title="DRAMeXchange RSS Feed" xmlUrl="http://www.dramexchange.com/rss.xml" htmlUrl="https://www.dramexchange.com/"/>
             <outline type="rss" text="ブルームバーグ 海外ニュース" title="ブルームバーグ 海外ニュース" xmlUrl="https://assets.wor.jp/rss/rdf/bloomberg/overseas.rdf" htmlUrl="https://www.bloomberg.co.jp/news/overseas"/>
-            <outline type="rss" text="WSJ.com: US Business" title="WSJ.com: US Business" xmlUrl="https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml" htmlUrl="https://wsj.com"/>
+            <outline type="rss" text="WSJ.com: Opinion" title="WSJ.com: Opinion" xmlUrl="https://feeds.a.dj.com/rss/RSSOpinion.xml" htmlUrl="https://www.wsj.com"/>
+            <outline type="rss" text="WSJ.com: World News" title="WSJ.com: World News" xmlUrl="https://feeds.a.dj.com/rss/RSSWorldNews.xml" htmlUrl="https://www.wsj.com"/>
+            <outline type="rss" text="WSJ.com: U.S. Business" title="WSJ.com: U.S. Business" xmlUrl="https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml" htmlUrl="https://www.wsj.com"/>
+            <outline type="rss" text="WSJ.com: Markets News" title="WSJ.com: Markets News" xmlUrl="https://feeds.a.dj.com/rss/RSSMarketsMain.xml" htmlUrl="https://www.wsj.com"/>
+            <outline type="rss" text="WSJ.com: Technology" title="WSJ.com: Technology" xmlUrl="https://feeds.a.dj.com/rss/RSSContentsTechnology.xml" htmlUrl="https://www.wsj.com"/>
+            <outline type="rss" text="WSJ.com: Politics" title="WSJ.com: Politics" xmlUrl="https://feeds.a.dj.com/rss/RSSPolitics.xml" htmlUrl="https://www.wsj.com"/>
+            <outline type="rss" text="WSJ.com: Economy" title="WSJ.com: Economy" xmlUrl="https://feeds.a.dj.com/rss/RSSEconomy.xml" htmlUrl="https://www.wsj.com"/>
+            <outline type="rss" text="WSJ.com: Real Estate" title="WSJ.com: Real Estate" xmlUrl="https://feeds.a.dj.com/rss/RSSRealEstate.xml" htmlUrl="https://www.wsj.com"/>
             <outline type="rss" text="ZeroHedge News" title="ZeroHedge News" xmlUrl="http://feeds.feedburner.com/zerohedge/feed" htmlUrl="https://www.zerohedge.com"/>
             <outline type="rss" text="ブルームバーグ マーケット" title="ブルームバーグ マーケット" xmlUrl="https://assets.wor.jp/rss/rdf/bloomberg/markets.rdf" htmlUrl="https://www.bloomberg.com/jp/markets"/>
             <outline type="rss" text="International" title="International" xmlUrl="http://www.economist.com/rss/international_rss.xml" htmlUrl="https://www.economist.com/international"/>
