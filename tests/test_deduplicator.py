@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, timezone
+import subprocess
 from unittest.mock import MagicMock
 
 import pytest
-import requests
 
 from src import Article
 from src.config import (
@@ -10,7 +10,7 @@ from src.config import (
     DeduplicationConfig,
     EmailConfig,
     FeedConfig,
-    LLMConfig,
+    GeminiConfig,
     OutputConfig,
     ScheduleConfig,
     SystemConfig,
@@ -26,12 +26,15 @@ def _article(title, link, source="Source", hours_ago=0):
     return Article(title=title, link=link, published=_dt(hours_ago), source=source, category="Tech")
 
 
-def _config(preferred_sources=None, threshold=0.85):
+def _config(preferred_sources=None, on_dedup_failure="send_anyway"):
     return AppConfig(
         feeds=FeedConfig(opml_file="feedly_rss.opml", timeout_seconds=10, skip_feedly_proxy=True),
         schedule=ScheduleConfig(interval_hours=24, time_window_hours=24),
-        llm=LLMConfig(base_url="http://localhost:11434", embedding_model="nomic-embed-text", dedup_threshold=threshold),
-        deduplication=DeduplicationConfig(preferred_sources=preferred_sources or []),
+        gemini=GeminiConfig(model="gemini-2.0-flash", dedup_batch_size=80),
+        deduplication=DeduplicationConfig(
+            preferred_sources=preferred_sources or [],
+            on_dedup_failure=on_dedup_failure,
+        ),
         email=EmailConfig(
             smtp_server="smtp.gmail.com",
             smtp_port=587,
@@ -80,13 +83,10 @@ def test_ut_005_1_cluster_similar_titles(monkeypatch):
         _article("Apple releases iOS 18 today", "https://example.com/2", hours_ago=2),
     ]
 
-    def fake_embedding(*args, **kwargs):
-        text = kwargs["text"] if "text" in kwargs else args[2]
-        if "today" in text:
-            return [0.999, 0.001]
-        return [1.0, 0.0]
-
-    monkeypatch.setattr("src.deduplicator._get_embedding", fake_embedding)
+    mock_result = MagicMock()
+    mock_result.stdout = "1"
+    mock_result.returncode = 0
+    monkeypatch.setattr("src.deduplicator.subprocess.run", lambda *args, **kwargs: mock_result)
 
     deduped = deduplicate_articles(articles, _config())
 
@@ -99,18 +99,10 @@ def test_ut_005_2_keep_different_titles(monkeypatch):
         _article("Fed rates", "https://example.com/2", hours_ago=2),
     ]
 
-    vectors = {
-        "Apple news": [1.0, 0.0],
-        "Fed rates": [0.0, 1.0],
-    }
-
-    def fake_embedding(*args, **kwargs):
-        text = kwargs.get("text")
-        if text is None and len(args) > 2:
-            text = args[2]
-        return vectors[text]
-
-    monkeypatch.setattr("src.deduplicator._get_embedding", fake_embedding)
+    mock_result = MagicMock()
+    mock_result.stdout = "1,2"
+    mock_result.returncode = 0
+    monkeypatch.setattr("src.deduplicator.subprocess.run", lambda *args, **kwargs: mock_result)
 
     deduped = deduplicate_articles(articles, _config())
 
@@ -123,7 +115,10 @@ def test_ut_005_3_prefer_preferred_source(monkeypatch):
         _article("Market update", "https://example.com/2", source="Other", hours_ago=1),
     ]
 
-    monkeypatch.setattr("src.deduplicator._get_embedding", lambda *args, **kwargs: [1.0, 0.0])
+    mock_result = MagicMock()
+    mock_result.stdout = "1"
+    mock_result.returncode = 0
+    monkeypatch.setattr("src.deduplicator.subprocess.run", lambda *args, **kwargs: mock_result)
 
     deduped = deduplicate_articles(articles, _config(preferred_sources=["Reuters"]))
 
@@ -135,7 +130,10 @@ def test_ut_005_4_prefer_recent_if_no_preferred(monkeypatch):
     older = _article("Cluster", "https://example.com/1", source="A", hours_ago=3)
     newer = _article("Cluster", "https://example.com/2", source="B", hours_ago=1)
 
-    monkeypatch.setattr("src.deduplicator._get_embedding", lambda *args, **kwargs: [1.0, 0.0])
+    mock_result = MagicMock()
+    mock_result.stdout = "2"
+    mock_result.returncode = 0
+    monkeypatch.setattr("src.deduplicator.subprocess.run", lambda *args, **kwargs: mock_result)
 
     deduped = deduplicate_articles([older, newer], _config(preferred_sources=[]))
 
@@ -143,16 +141,16 @@ def test_ut_005_4_prefer_recent_if_no_preferred(monkeypatch):
     assert deduped[0].link == newer.link
 
 
-def test_ut_005_5_handle_ollama_timeout(monkeypatch):
+def test_ut_005_5_handle_gemini_timeout(monkeypatch):
     articles = [_article("a", "https://example.com/1", hours_ago=3), _article("b", "https://example.com/2", hours_ago=1)]
 
     def raise_timeout(*args, **kwargs):
-        raise TimeoutError("ollama timeout")
+        raise subprocess.TimeoutExpired(cmd=["gemini"], timeout=60)
 
-    monkeypatch.setattr("src.deduplicator._get_embedding", raise_timeout)
+    monkeypatch.setattr("src.deduplicator.subprocess.run", raise_timeout)
 
     with pytest.raises(DeduplicationError):
-        deduplicate_articles(articles, _config())
+        deduplicate_articles(articles, _config(on_dedup_failure="fail"))
 
 
 def test_ut_005_6_handle_empty_list():
@@ -164,26 +162,23 @@ def test_ut_005_6_handle_empty_list():
 def test_ut_005_7_on_dedup_failure_fail(monkeypatch):
     articles = [_article("a", "https://example.com/1"), _article("b", "https://example.com/2")]
 
-    monkeypatch.setattr("src.deduplicator._get_embedding", lambda *args, **kwargs: (_ for _ in ()).throw(ConnectionError("down")))
+    def raise_error(*args, **kwargs):
+        raise subprocess.CalledProcessError(returncode=1, cmd=["gemini"])
 
-    cfg = _config()
+    monkeypatch.setattr("src.deduplicator.subprocess.run", raise_error)
+    cfg = _config(on_dedup_failure="fail")
 
     with pytest.raises(DeduplicationError):
         deduplicate_articles(articles, cfg)
 
 
-def test_ut_005_8_model_not_found(monkeypatch):
+def test_ut_005_8_on_dedup_failure_send_anyway(monkeypatch):
     articles = [_article("a", "https://example.com/1"), _article("b", "https://example.com/2")]
 
-    mock_response = MagicMock()
-    mock_response.status_code = 404
+    def raise_error(*args, **kwargs):
+        raise subprocess.CalledProcessError(returncode=1, cmd=["gemini"])
 
-    def raise_404(*args, **kwargs):
-        exc = requests.exceptions.HTTPError(response=mock_response)
-        exc.response = mock_response
-        raise exc
+    monkeypatch.setattr("src.deduplicator.subprocess.run", raise_error)
+    deduped = deduplicate_articles(articles, _config(on_dedup_failure="send_anyway"))
 
-    monkeypatch.setattr("src.deduplicator._get_embedding", raise_404)
-
-    with pytest.raises(DeduplicationError):
-        deduplicate_articles(articles, _config())
+    assert len(deduped) == len(articles)

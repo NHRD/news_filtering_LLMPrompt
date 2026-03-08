@@ -23,14 +23,14 @@ class ScheduleConfig(NamedTuple):
     time_window_hours: int
 
 
-class LLMConfig(NamedTuple):
-    base_url: str
-    embedding_model: str
-    dedup_threshold: float
+class GeminiConfig(NamedTuple):
+    model: str
+    dedup_batch_size: int
 
 
 class DeduplicationConfig(NamedTuple):
     preferred_sources: List[str]
+    on_dedup_failure: str
 
 
 class EmailConfig(NamedTuple):
@@ -56,7 +56,7 @@ class SystemConfig(NamedTuple):
 class AppConfig(NamedTuple):
     feeds: FeedConfig
     schedule: ScheduleConfig
-    llm: LLMConfig
+    gemini: GeminiConfig
     deduplication: DeduplicationConfig
     email: EmailConfig
     output: OutputConfig
@@ -93,7 +93,7 @@ def load_config(path: str = "config.yaml") -> AppConfig:
 
     feeds = cfg.get("feeds", {})
     schedule = cfg.get("schedule", {})
-    llm = cfg.get("llm", {})
+    gemini = cfg.get("gemini", {})
     dedup = cfg.get("deduplication", {})
     email = cfg.get("email", {})
     output = cfg.get("output", {})
@@ -109,13 +109,13 @@ def load_config(path: str = "config.yaml") -> AppConfig:
             interval_hours=int(schedule.get("interval_hours", 24)),
             time_window_hours=int(schedule.get("time_window_hours", 24)),
         ),
-        llm=LLMConfig(
-            base_url=_require(llm.get("base_url", "http://localhost:11434"), "llm.base_url"),
-            embedding_model=llm.get("embedding_model", "nomic-embed-text"),
-            dedup_threshold=float(llm.get("dedup_threshold", 0.85)),
+        gemini=GeminiConfig(
+            model=gemini.get("model", "gemini-2.0-flash"),
+            dedup_batch_size=int(gemini.get("dedup_batch_size", 80)),
         ),
         deduplication=DeduplicationConfig(
             preferred_sources=list(dedup.get("preferred_sources", [])),
+            on_dedup_failure=dedup.get("on_dedup_failure", "send_anyway"),
         ),
         email=EmailConfig(
             smtp_server=email.get("smtp_server", "smtp.gmail.com"),

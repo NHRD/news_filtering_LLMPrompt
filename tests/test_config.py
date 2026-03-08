@@ -15,12 +15,12 @@ def _base_yaml(sender="${GMAIL_ADDRESS}", password="${GMAIL_APP_PASSWORD}"):
         schedule:
           interval_hours: 24
           time_window_hours: 24
-        llm:
-          base_url: http://localhost:11434
-          embedding_model: nomic-embed-text
-          dedup_threshold: 0.85
+        gemini:
+          model: gemini-2.0-flash
+          dedup_batch_size: 80
         deduplication:
           preferred_sources: [Reuters]
+          on_dedup_failure: send_anyway
         email:
           smtp_server: smtp.gmail.com
           smtp_port: 587
@@ -47,6 +47,7 @@ def test_ut_008_1_load_config_yaml(tmp_path, monkeypatch):
 
     assert cfg.email.sender_email == "sender@example.com"
     assert cfg.schedule.time_window_hours == 24
+    assert cfg.gemini.model == "gemini-2.0-flash"
 
 
 def test_ut_008_2_expand_env_vars(tmp_path, monkeypatch):
@@ -84,3 +85,4 @@ def test_ut_008_5_preferred_sources_loading(tmp_path, monkeypatch):
     cfg = load_config(str(cfg_file))
 
     assert "Reuters" in cfg.deduplication.preferred_sources
+    assert cfg.deduplication.on_dedup_failure == "send_anyway"

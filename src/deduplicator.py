@@ -1,12 +1,9 @@
-"""Two-stage article deduplication with Ollama embeddings."""
+"""Two-stage article deduplication with URL match and Gemini CLI."""
 
 import logging
-from collections import defaultdict
 from typing import Dict, List
 
-import numpy as np
-import requests
-from sklearn.cluster import AgglomerativeClustering
+import subprocess
 
 try:
     from . import Article
@@ -31,65 +28,75 @@ def _dedup_by_exact_url(articles):
     return list(by_url.values())
 
 
-def _get_embedding(base_url, model, text, timeout_seconds=20):
-    # type: (str, str, str, int) -> List[float]
-    url = base_url.rstrip("/") + "/api/embeddings"
-    resp = requests.post(url, json={"model": model, "prompt": text}, timeout=timeout_seconds)
-    resp.raise_for_status()
-    data = resp.json()
-    embedding = data.get("embedding")
-    if not isinstance(embedding, list) or not embedding:
-        raise ValueError("Empty embedding response")
-    return embedding
+def _build_prompt(lines, preferred_sources, model):
+    # type: (List[str], List[str], str) -> str
+    preferred_sources_text = ", ".join(preferred_sources) if preferred_sources else "なし"
+    numbered_list = "\n".join(lines)
+    return (
+        "以下はニュース記事のタイトル一覧です（番号. タイトル (ソース) の形式）。\n"
+        "同じニュースを報じている記事をグループ化し、各グループから1記事だけ残してください。\n"
+        "残す記事の選択基準（優先順）:\n"
+        f"  1. preferred_sources（{preferred_sources_text}）に含まれるソースがあればその中で最新のもの\n"
+        "  2. なければグループ内で最新のもの\n"
+        "出力は残す記事の番号のみをカンマ区切りで返してください。説明文は不要です。\n"
+        "例: 1,3,5,8,12\n"
+        f"使用モデル: {model}\n\n"
+        f"{numbered_list}"
+    )
 
 
-def _pick_representative(cluster_articles, preferred_sources):
-    # type: (List[Article], List[str]) -> Article
-    if preferred_sources:
-        preferred = {s.lower() for s in preferred_sources}
-        candidates = [a for a in cluster_articles if a.source.lower() in preferred]
-        if candidates:
-            return max(candidates, key=lambda a: a.published)
-    return max(cluster_articles, key=lambda a: a.published)
+def _parse_indices(output, max_index):
+    # type: (str, int) -> List[int]
+    if not output:
+        raise ValueError("Gemini output is empty")
+
+    selected = []  # type: List[int]
+    seen = set()  # type: set
+    for token in output.split(","):
+        value = token.strip()
+        if not value:
+            continue
+        if not value.isdigit():
+            raise ValueError(f"Invalid index token: {value}")
+        index = int(value)
+        if index < 1 or index > max_index:
+            raise ValueError(f"Index out of range: {index}")
+        zero_based = index - 1
+        if zero_based not in seen:
+            seen.add(zero_based)
+            selected.append(zero_based)
+
+    if not selected:
+        raise ValueError("No valid indices in Gemini output")
+    return selected
 
 
-def _cluster_by_title_similarity(articles, base_url, model, dedup_threshold, preferred_sources):
-    # type: (List[Article], str, str, float, List[str]) -> List[Article]
+def _deduplicate_batch(articles, preferred_sources, model):
+    # type: (List[Article], List[str], str) -> List[Article]
+    lines = [f"{i + 1}. {article.title} ({article.source})" for i, article in enumerate(articles)]
+    prompt = _build_prompt(lines, preferred_sources, model)
+    result = subprocess.run(
+        ["gemini", "-p", prompt],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    result.check_returncode()
+    indices = _parse_indices(result.stdout.strip(), len(articles))
+    return [articles[i] for i in indices]
+
+
+def _deduplicate_by_gemini(articles, preferred_sources, model, dedup_batch_size):
+    # type: (List[Article], List[str], str, int) -> List[Article]
     if len(articles) <= 1:
         return articles
 
-    embeddings = [
-        _get_embedding(base_url=base_url, model=model, text=article.title)
-        for article in articles
-    ]
-    X = np.array(embeddings, dtype=np.float64)
-
-    # cosine distance threshold = 1 - cosine similarity threshold
-    distance_threshold = 1 - dedup_threshold
-    # scikit-learn changed `affinity` to `metric`; support both for compatibility.
-    try:
-        clustering = AgglomerativeClustering(
-            n_clusters=None,
-            distance_threshold=distance_threshold,
-            metric="cosine",
-            linkage="average",
-        )
-    except TypeError:
-        clustering = AgglomerativeClustering(
-            n_clusters=None,
-            distance_threshold=distance_threshold,
-            affinity="cosine",
-            linkage="average",
-        )
-    labels = clustering.fit_predict(X)
-
-    grouped = defaultdict(list)  # type: Dict[int, List[Article]]
-    for label, article in zip(labels, articles):
-        grouped[int(label)].append(article)
-
-    deduped = [_pick_representative(group, preferred_sources) for group in grouped.values()]
-    deduped.sort(key=lambda a: a.published, reverse=True)
-    return deduped
+    sorted_articles = sorted(articles, key=lambda a: (a.title or "").casefold())
+    deduplicated = []  # type: List[Article]
+    for start in range(0, len(sorted_articles), dedup_batch_size):
+        batch = sorted_articles[start : start + dedup_batch_size]
+        deduplicated.extend(_deduplicate_batch(batch, preferred_sources, model))
+    return deduplicated
 
 
 def deduplicate_articles(articles, config):
@@ -110,24 +117,20 @@ def deduplicate_articles(articles, config):
     logging.info("[Deduplicator] Stage 1 URL dedup: %s -> %s", len(articles), len(stage1))
 
     try:
-        stage2 = _cluster_by_title_similarity(
+        stage2 = _deduplicate_by_gemini(
             articles=stage1,
-            base_url=config.llm.base_url,
-            model=config.llm.embedding_model,
-            dedup_threshold=config.llm.dedup_threshold,
             preferred_sources=config.deduplication.preferred_sources,
+            model=config.gemini.model,
+            dedup_batch_size=config.gemini.dedup_batch_size,
         )
+        stage2.sort(key=lambda a: a.published, reverse=True)
         logging.info("[Deduplicator] Stage 2 title clustering: %s -> %s", len(stage1), len(stage2))
         return stage2
-    except requests.exceptions.HTTPError as exc:
-        if exc.response is not None and exc.response.status_code == 404:
-            msg = f"Model not found: {config.llm.embedding_model}"
-            logging.critical("[Deduplicator] %s. Aborting.", msg)
-            raise DeduplicationError(msg)
-        msg = f"HTTP error during deduplication: {exc}"
-        logging.error("[Deduplicator] %s", msg)
-        raise DeduplicationError(msg)
     except Exception as exc:
-        msg = f"Unexpected error during deduplication: {exc}"
+        msg = f"Stage 2 Gemini deduplication failed: {exc}"
+        if config.deduplication.on_dedup_failure == "send_anyway":
+            stage1.sort(key=lambda a: a.published, reverse=True)
+            logging.warning("[Deduplicator] %s. Returning Stage 1 output.", msg)
+            return stage1
         logging.error("[Deduplicator] %s", msg)
         raise DeduplicationError(msg)

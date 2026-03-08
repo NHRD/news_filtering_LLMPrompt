@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
 
 from src import Article
 from src.config import (
@@ -6,7 +7,7 @@ from src.config import (
     DeduplicationConfig,
     EmailConfig,
     FeedConfig,
-    LLMConfig,
+    GeminiConfig,
     OutputConfig,
     ScheduleConfig,
     SystemConfig,
@@ -23,8 +24,8 @@ def _config(tmp_path):
     return AppConfig(
         feeds=FeedConfig(opml_file=str(tmp_path / "feeds.opml"), timeout_seconds=1, skip_feedly_proxy=True),
         schedule=ScheduleConfig(interval_hours=24, time_window_hours=24),
-        llm=LLMConfig(base_url="http://localhost:11434", embedding_model="nomic-embed-text", dedup_threshold=0.85),
-        deduplication=DeduplicationConfig(preferred_sources=["Reuters"]),
+        gemini=GeminiConfig(model="gemini-2.0-flash", dedup_batch_size=80),
+        deduplication=DeduplicationConfig(preferred_sources=["Reuters"], on_dedup_failure="send_anyway"),
         email=EmailConfig(
             smtp_server="smtp.gmail.com",
             smtp_port=587,
@@ -93,12 +94,15 @@ def test_it_002_1_filter_then_deduplicate(monkeypatch):
         Article("same", "https://example.com/1", now - timedelta(hours=1), "A", "Tech"),
     ]
 
-    monkeypatch.setattr("src.deduplicator._get_embedding", lambda *args, **kwargs: [1.0, 0.0])
+    mock_result = MagicMock()
+    mock_result.stdout = "1"
+    mock_result.returncode = 0
+    monkeypatch.setattr("src.deduplicator.subprocess.run", lambda *args, **kwargs: mock_result)
     cfg = AppConfig(
         feeds=FeedConfig("feedly_rss.opml", 10, True),
         schedule=ScheduleConfig(12, 12),
-        llm=LLMConfig("http://localhost:11434", "nomic-embed-text", 0.85),
-        deduplication=DeduplicationConfig([]),
+        gemini=GeminiConfig("gemini-2.0-flash", 80),
+        deduplication=DeduplicationConfig([], "send_anyway"),
         email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),
         output=OutputConfig(True, "./output", "./logs/x.log", "./state/x.json"),
         system=SystemConfig(poweroff_after_run=False),
@@ -109,32 +113,29 @@ def test_it_002_1_filter_then_deduplicate(monkeypatch):
     assert len(deduped) == 1
 
 
-def test_it_002_2_dedup_with_ollama_running(monkeypatch):
+def test_it_002_2_dedup_with_gemini_running(monkeypatch):
     now = datetime(2026, 2, 17, 12, 0, tzinfo=timezone.utc)
     articles = [
         Article("a", "https://example.com/1", now, "A", "Tech"),
         Article("b", "https://example.com/2", now, "B", "Tech"),
     ]
-    calls = {"count": 0}
-
-    def fake_embedding(*args, **kwargs):
-        calls["count"] += 1
-        return [1.0, 0.0] if calls["count"] == 1 else [0.0, 1.0]
-
-    monkeypatch.setattr("src.deduplicator._get_embedding", fake_embedding)
+    mock_result = MagicMock()
+    mock_result.stdout = "1,2"
+    mock_result.returncode = 0
+    monkeypatch.setattr("src.deduplicator.subprocess.run", lambda *args, **kwargs: mock_result)
     cfg = AppConfig(
         feeds=FeedConfig("feedly_rss.opml", 10, True),
         schedule=ScheduleConfig(12, 12),
-        llm=LLMConfig("http://localhost:11434", "nomic-embed-text", 0.85),
-        deduplication=DeduplicationConfig([]),
+        gemini=GeminiConfig("gemini-2.0-flash", 80),
+        deduplication=DeduplicationConfig([], "send_anyway"),
         email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),
         output=OutputConfig(True, "./output", "./logs/x.log", "./state/x.json"),
         system=SystemConfig(poweroff_after_run=False),
     )
 
-    deduplicate_articles(articles, cfg)
+    deduped = deduplicate_articles(articles, cfg)
 
-    assert calls["count"] == 2
+    assert len(deduped) == 2
 
 
 def test_it_003_1_build_html_from_deduped_articles():
@@ -215,7 +216,7 @@ def test_e2e_001_2_run_pipeline_full_with_mocked_email(monkeypatch, tmp_path):
     assert sent["called"] is True
 
 
-def test_e2e_001_3_run_with_ollama_down_fails(monkeypatch, tmp_path):
+def test_e2e_001_3_run_with_gemini_down_fails(monkeypatch, tmp_path):
     cfg = _config(tmp_path)
     base_time = datetime(2026, 2, 17, 12, 0, tzinfo=timezone.utc)
 
@@ -226,7 +227,7 @@ def test_e2e_001_3_run_with_ollama_down_fails(monkeypatch, tmp_path):
     )
     
     def raise_dedup_error(*args, **kwargs):
-        raise DeduplicationError("ollama down")
+        raise DeduplicationError("gemini down")
     
     monkeypatch.setattr("src.main.deduplicate_articles", raise_dedup_error)
     monkeypatch.setattr("src.main.send_email", lambda *args, **kwargs: True)

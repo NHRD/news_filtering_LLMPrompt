@@ -9,18 +9,20 @@ schedule:
   interval_hours: 24
   time_window_hours: 24
 
-# LLM Configuration (Ollama)
-llm:
-  base_url: "${OLLAMA_BASE_URL}"
-  embedding_model: "nomic-embed-text"
-  dedup_threshold: 0.85
+# Gemini Configuration
+gemini:
+  model: "gemini-2.0-flash"
+  dedup_batch_size: 80
 
 # Deduplication Settings
 deduplication:
+  on_dedup_failure: "send_anyway"
   preferred_sources:
     - "Reuters"
     - "Bloomberg"
     - "WSJ"
+    - "TechCrunch"
+    - "The Verge"
 
 # Email Configuration
 email:
