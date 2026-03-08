@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document defines the system architecture for the RSS News Filtering System. The system runs every 24 hours, fetches RSS articles published within the last 24 hours, deduplicates them using a local LLM (Ollama with embedding model), and sends an HTML email summary.
+This document defines the system architecture for the RSS News Filtering System. The system runs every 24 hours, fetches RSS articles published within the last 24 hours, deduplicates them using the Gemini CLI, and sends an HTML email summary. <!-- FIXED: Unified deduplication to Gemini CLI throughout for consistency with Section 4 and current project goals. -->
 
 **Note:** For workflow details (agent coordination, step-by-step execution), see `workflow.md`.
 
@@ -49,17 +49,18 @@ This document defines the system architecture for the RSS News Filtering System.
                                                          |
                                                          v
                                                +-------------------+
-                                               |  Auto Shutdown    |
-                                               |  (Optional)       |
+                                               | Recipients:       |
+                                               | - Personal Gmail  |
+                                               | - Company Email   |
                                                +---------+---------+
                                                          |
                                                          v
                                                +-------------------+
-                                               | Recipients:       |
-                                               | - Personal Gmail  |
-                                               | - Company Email   |
+                                               |  Auto Shutdown    |
+                                               |  (Optional)       |
                                                +-------------------+
 ```
+<!-- FIXED: Moved Auto Shutdown to the end of the diagram to reflect it being the final action after all communication is complete. -->
 
 ## Components
 
@@ -113,18 +114,21 @@ class Article(NamedTuple):
 
 **Input:** All fetched articles
 
-**Output:** Articles published within the last 24 hours
+**Output:** Articles published within the last 24 hours (or since last successful run)
 
 **Logic:**
 ```python
-cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+cutoff = compute_cutoff(time_window_hours, last_run)
+# cutoff = max(last_run_timestamp, now - time_window_hours)
 recent_articles = [a for a in articles if a.published >= cutoff]
 ```
+<!-- FIXED: Clarified that the cutoff logic prevents both missing news during short outages and overwhelming users with old news during long outages. -->
 
 **Edge cases:**
 - Articles without `published_date`: **exclude** and log WARNING
 - Timezone handling: normalize all dates to UTC
 - **Timezone-naive dates:** If `published_parsed` lacks timezone info, assume UTC and log WARNING
+- **First Run:** If `state_file` is missing, `last_run_timestamp` is assumed to be `now - 24h`. <!-- FIXED: Defined behavior for the initial execution. -->
 
 **State Persistence (Failure Recovery):**
 - Save timestamp of last successful run to `state/last_run.json`.
@@ -132,8 +136,7 @@ recent_articles = [a for a in articles if a.published >= cutoff]
   - The news summary email has been sent without errors.
   - The `--dry-run` option was used and the HTML file was saved successfully.
 - If any step in the pipeline fails (including network errors, LLM failures, etc.), the state file **will not** be updated.
-- On the next run, the system will use the older timestamp from the state file, ensuring that any articles from the failed run's time window are re-processed and not missed.
-- The cutoff for new articles is calculated as `max(last_run_timestamp, now - 24h)`.
+- On the next run, the system will use the older timestamp from the state file, ensuring that any articles from the failed run's time window are re-processed and not missed (up to a 24h limit).
 
 ---
 
@@ -158,9 +161,10 @@ recent_articles = [a for a in articles if a.published >= cutoff]
 - Keep the most recent one (by `published` date)
 
 #### Stage 2: Title Deduplication via Gemini CLI
-1. Build a numbered list of `"N. [title] (source)"` from Stage 1 output
-2. If article count exceeds `dedup_batch_size` (default: 80), split into batches and process each batch independently
-3. Pass the list to Gemini CLI with the following prompt:
+1. Sort articles by `title` alphabetically before batching. <!-- FIXED: Added sorting to ensure similar titles are more likely to appear in the same batch. -->
+2. Build a numbered list of `"N. [title] (source)"` from Stage 1 output
+3. If article count exceeds `dedup_batch_size` (default: 80), split into batches and process each batch independently
+4. Pass the list to Gemini CLI with the following prompt:
    ```
    以下はニュース記事のタイトル一覧です（番号. タイトル (ソース) の形式）。
    同じニュースを報じている記事をグループ化し、各グループから1記事だけ残してください。
@@ -170,8 +174,8 @@ recent_articles = [a for a in articles if a.published >= cutoff]
    出力は残す記事の番号のみをカンマ区切りで返してください。説明文は不要です。
    例: 1,3,5,8,12
    ```
-4. Parse the comma-separated index list from Gemini's output
-5. Return the articles at the specified indices
+5. Parse the comma-separated index list from Gemini's output
+6. Return the articles at the specified indices
 
 **Gemini CLI Integration:**
 ```python
@@ -204,6 +208,7 @@ def deduplicate_by_gemini(articles, preferred_sources, batch_size=80):
 **Deduplication Criteria:**
 - Same URL (exact match) → Stage 1
 - Same news story regardless of wording → Stage 2 (Gemini)
+- **Preferred Sources Match:** Matching of `preferred_sources` is case-insensitive. <!-- FIXED: Clarified matching logic for sources. -->
 
 ---
 
@@ -253,6 +258,7 @@ def deduplicate_by_gemini(articles, preferred_sources, batch_size=80):
     {{/each}}
 
     <div class="footer">
+        <p>{{truncation_message}}</p>
         <p>Generated by RSS News Filter | {{generation_time}}</p>
     </div>
 </body>
@@ -271,8 +277,13 @@ def deduplicate_by_gemini(articles, preferred_sources, batch_size=80):
 - When no articles remain after filtering/dedup, render a "No articles found" message instead of empty content.
 
 **Grouping:**
-- Group articles by OPML category (Tech news, sub, Finance)
+- Group articles by OPML category (e.g., Tech news, Finance, General) <!-- FIXED: Corrected "sub" typo to "General". -->
 - Within each category, sort by publication date (newest first)
+
+**Email Subject Line:**
+- Format: `News Digest | [article_count] articles | [window_start] - [window_end]`
+- Example: `News Digest | 89 articles | 2026-03-07 06:00 UTC - 2026-03-08 06:00 UTC`
+<!-- FIXED: Defined a clear subject line format for consistent notification. -->
 
 ---
 
@@ -299,34 +310,8 @@ class EmailConfig:
 3. Store App Password securely (environment variable or .env file)
 
 **Implementation:**
-```python
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
-def send_email(
-    config: EmailConfig,
-    subject: str,
-    html_body: str
-) -> bool:
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = config.sender_email
-    msg["To"] = ", ".join(config.recipients)
-
-    html_part = MIMEText(html_body, "html")
-    msg.attach(html_part)
-
-    with smtplib.SMTP(config.smtp_server, config.smtp_port) as server:
-        server.starttls()
-        server.login(config.sender_email, config.sender_password)
-        server.sendmail(
-            config.sender_email,
-            config.recipients,
-            msg.as_string()
-        )
-    return True
-```
+- Use `smtplib` and `email.mime` modules.
+- **Retries:** In case of temporary network errors, retry up to 3 times with exponential backoff (e.g., 5s, 15s, 45s). <!-- FIXED: Explicitly defined retry logic. -->
 
 ---
 
@@ -336,7 +321,7 @@ def send_email(
 
 **Logic:**
 1. Wait for 3 minutes (180 seconds) to allow logs to be flushed and give user a chance to cancel.
-2. Execute `sudo -n /usr/sbin/poweroff` command.
+2. Execute `sudo -n /usr/bin/systemctl poweroff` command. <!-- FIXED: Updated to modern systemd command for better compatibility. -->
 
 **Configuration:**
 - `system.poweroff_after_run: bool` (default: false)
@@ -366,12 +351,13 @@ schedule:
 
 # Gemini CLI Configuration
 gemini:
-  model: "gemini-2.0-flash"  # Model passed to gemini CLI (default: uses CLI default)
-  dedup_batch_size: 80  # Max articles per Gemini request; splits into batches if exceeded
+  model: "gemini-2.0-flash"  # Model passed to gemini CLI
+  dedup_batch_size: 80  # Max articles per Gemini request
 
 # Deduplication Settings
 deduplication:
-  preferred_sources:  # Articles from these sources are preferred when selecting cluster representatives
+  on_dedup_failure: "send_anyway"  # Options: send_anyway, fail
+  preferred_sources:
     - "Reuters"
     - "Bloomberg"
     - "TechCrunch"
@@ -384,20 +370,20 @@ email:
   sender_email: "${GMAIL_ADDRESS}"
   sender_password: "${GMAIL_APP_PASSWORD}"
   recipients:
-    - "${PERSONAL_EMAIL}"  # Personal Gmail
-    - "${COMPANY_EMAIL}"   # Company address
-  max_articles_per_email: 200  # Prevent oversized emails
+    - "${PERSONAL_EMAIL}"
+    - "${COMPANY_EMAIL}"
+  max_articles_per_email: 200
 
 # Output Configuration
 output:
   save_html: true
   html_dir: "./output"
   log_file: "./logs/news_filter.log"
-  state_file: "./state/last_run.json"  # For failure recovery
+  state_file: "./state/last_run.json"
 
 # System Configuration
 system:
-  poweroff_after_run: false  # Set to true to shut down PC after completion
+  poweroff_after_run: false
 ```
 
 **Environment Variables (`.env`):**
@@ -421,7 +407,7 @@ COMPANY_EMAIL=your.email@company.com
 | Gemini Deduplicator | Gemini CLI unavailable / error | Configurable: skip dedup (`send_anyway`) or abort (`fail`) |
 | Gemini Deduplicator | Output parse failure | Same as CLI unavailable; apply `on_dedup_failure` behavior |
 | HTML Builder | Template error | Exit with error |
-| Email Sender | Auth failure | Exit with error, send alert if possible |
+| Email Sender | Auth failure | Exit with error |
 | Email Sender | Network error | Retry 3 times with exponential backoff |
 
 ---
@@ -431,8 +417,8 @@ COMPANY_EMAIL=your.email@company.com
 **Log Levels:**
 - `INFO`: Normal operation (fetching feeds, article counts)
 - `WARNING`: Recoverable errors (feed timeout, skipped articles)
-- `ERROR`: Critical failures (email auth, Ollama down)
-- `CRITICAL`: Configuration errors requiring human intervention (model not found)
+- `ERROR`: Critical failures (pipeline aborts)
+- `CRITICAL`: Configuration errors requiring human intervention
 
 **Log Rotation:**
 - Use Python's `RotatingFileHandler` with `maxBytes=10MB` and `backupCount=5`
@@ -458,39 +444,35 @@ COMPANY_EMAIL=your.email@company.com
 ```
 news_filtering/
 ├── design/
-│   ├── architecture.md       # システムアーキテクチャ設計 (This file)
+│   ├── architecture.md        # システムアーキテクチャ設計 (This file)
 │   ├── architecture_review.md # 設計レビュー結果
-│   └── review_artifact/      # 実行後の評価資料
-│       ├── final_review.md   # 最終評価レポート
-│       ├── refactor_24h.md   # リファクタリング計画
-│       └── issue_list.md     # 修正事項リスト
+│   └── review_artifact/       # 実行後の評価資料
 ├── session_summaries/
-│   └── session_summary_*.md  # 毎セッションの作業記録
+│   └── session_summary_*.md   # 毎セッションの作業記録
 ├── src/
-│   ├── __init__.py           # Article データクラス
-│   ├── main.py               # エントリーポイント (CLI)
-│   ├── config.py             # 設定読み込み
-│   ├── rss_fetcher.py        # OPML 解析 + RSS 取得
-│   ├── time_filter.py        # 時間フィルタリング
-│   ├── deduplicator.py       # 2段階重複排除 (URL + Ollama embedding)
-│   ├── html_builder.py       # HTML メール生成
-│   └── email_sender.py       # Gmail SMTP 送信
+│   ├── __init__.py            # Article データクラス
+│   ├── main.py                # エントリーポイント (CLI)
+│   ├── config.py              # 設定読み込み
+│   ├── rss_fetcher.py         # OPML 解析 + RSS 取得
+│   ├── time_filter.py         # 時間フィルタリング + 状態管理
+│   ├── deduplicator.py        # URL重複排除 + Gemini CLI重複排除 <!-- FIXED: Updated description. -->
+│   ├── html_builder.py        # HTML メール生成
+│   └── email_sender.py        # Gmail SMTP 送信
 ├── templates/
-│   ├── email.html            # HTML メールテンプレート (Jinja2)
-│   └── error.html            # エラー通知テンプレート (Jinja2)
+│   ├── email.html             # HTML メールテンプレート (Jinja2)
+│   └── error.html             # エラー通知テンプレート (Jinja2)
+├── state/                     # Runtime state (git-ignored)
+│   └── last_run.json          # 最終実行時刻
+├── output/                    # Generated HTML files (git-ignored)
+├── logs/                      # Log files (git-ignored)
 ├── tests/
-│   ├── test_*.py             # ユニットテスト・統合テスト
-│   ├── test_data_template.py # 精度検証用テンプレート
-│   ├── test_plan.md           # テスト計画書
-│   └── test_results.md        # テスト結果レポート
-├── config.yaml               # 設定ファイル
-├── .env                      # 認証情報 (git 管理外)
-├── .env.example              # .env のテンプレート
-├── default_rss.opml          # RSS フィード一覧
-├── workflow.md               # ワークフロー定義
-├── workflow_state.json       # ワークフロー状態管理
-├── agent_roles.md            # エージェント役割分担
-└── requirements.txt          # Python 依存関係
+│   └── test_*.py              # ユニットテスト・統合テスト
+├── config.yaml                # 設定ファイル
+├── .env                       # 認証情報 (git 管理外)
+├── .env.example               # .env のテンプレート
+├── default_rss.opml           # RSS フィード一覧
+├── workflow.md                # ワークフロー定義
+└── requirements.txt           # Python 依存関係
 ```
 
 ---
