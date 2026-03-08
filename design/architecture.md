@@ -31,8 +31,8 @@ This document defines the system architecture for the RSS News Filtering System.
                                                          |
                                                          v
                                                +-------------------+
-                                               |  LLM Deduplicator |
-                                               |  (Ollama/nomic)   |
+                                               | Gemini Deduplicator|
+                                               |  (Gemini CLI)     |
                                                +---------+---------+
                                                          |
                                                          v
@@ -137,28 +137,19 @@ recent_articles = [a for a in articles if a.published >= cutoff]
 
 ---
 
-### 4. LLM Deduplicator (Ollama)
+### 4. Gemini Deduplicator
 
 **Input:** List of recent articles
 
 **Output:** Deduplicated list of unique articles
 
-**Purpose:** Remove duplicate/similar articles that cover the same news story
-
-**Recommended Model:** `nomic-embed-text` (dedicated embedding model, faster and more efficient than general-purpose LLMs)
+**Purpose:** Remove duplicate/similar articles that cover the same news story using Gemini CLI's natural language understanding
 
 **Failure Behavior:**
-- **Ollama unavailable:**
-  1. Abort normal article processing.
-  2. Generate an HTML email body containing an error message (e.g., "Failed to connect to Ollama for deduplication.").
-  3. Send this error notification email to all recipients.
-  4. Log an ERROR and terminate the process with a non-zero exit code.
-  5. The `state/last_run.json` file **is not** updated to ensure the time window is re-processed on the next run.
-- **Model not found:**
-  1. This is a critical configuration error.
-  2. Generate and send an email notification stating that the configured model is missing.
-  3. Log a CRITICAL error and terminate the process with a non-zero exit code.
-  4. The `state/last_run.json` file **is not** updated.
+- **Gemini CLI unavailable / non-zero exit:** Controlled by `on_dedup_failure` config setting:
+  - `send_anyway` (default): Skip deduplication and proceed with all articles. Log WARNING.
+  - `fail`: Abort pipeline with exit code 1. Log ERROR. The `state/last_run.json` file **is not** updated to ensure re-processing on the next run.
+- **Output parse failure:** Treat as Gemini unavailable and apply `on_dedup_failure` behavior.
 
 **Two-Stage Deduplication Process:**
 
@@ -166,53 +157,53 @@ recent_articles = [a for a in articles if a.published >= cutoff]
 - Remove articles with identical `link` values
 - Keep the most recent one (by `published` date)
 
-#### Stage 2: Title Similarity Clustering
-1. Generate embeddings for each article title using Ollama.
-2. Use **Agglomerative Clustering** with cosine distance.
-3. Distance threshold: configurable (default: 0.15, equivalent to 0.85 similarity).
-4. Select one representative article from each cluster using the following strictly defined logic:
-   - **If** the cluster contains one or more articles from `preferred_sources`:
-     - Select the **most recent** article *from among the preferred sources only*.
-   - **Else** (the cluster contains no articles from preferred sources):
-     - Select the **most recent** article *from the entire cluster*.
+#### Stage 2: Title Deduplication via Gemini CLI
+1. Build a numbered list of `"N. [title] (source)"` from Stage 1 output
+2. If article count exceeds `dedup_batch_size` (default: 80), split into batches and process each batch independently
+3. Pass the list to Gemini CLI with the following prompt:
+   ```
+   以下はニュース記事のタイトル一覧です（番号. タイトル (ソース) の形式）。
+   同じニュースを報じている記事をグループ化し、各グループから1記事だけ残してください。
+   残す記事の選択基準（優先順）:
+     1. preferred_sources（Reuters, Bloomberg, TechCrunch, The Verge）に含まれるソースがあればその中で最新のもの
+     2. なければグループ内で最新のもの
+   出力は残す記事の番号のみをカンマ区切りで返してください。説明文は不要です。
+   例: 1,3,5,8,12
+   ```
+4. Parse the comma-separated index list from Gemini's output
+5. Return the articles at the specified indices
 
-**Ollama Integration:**
+**Gemini CLI Integration:**
 ```python
-import requests
-from sklearn.cluster import AgglomerativeClustering
+import subprocess
 
-def get_embedding(text: str, model: str = "nomic-embed-text") -> list[float]:
-    response = requests.post(
-        "http://localhost:11434/api/embeddings",
-        json={"model": model, "prompt": text}
+def deduplicate_by_gemini(articles, preferred_sources, batch_size=80):
+    # Build numbered list: "1. Title (Source)"
+    lines = [f"{i+1}. {a.title} ({a.source})" for i, a in enumerate(articles)]
+
+    # Batch processing if needed
+    if len(lines) > batch_size:
+        return _deduplicate_in_batches(articles, preferred_sources, batch_size)
+
+    prompt = _build_prompt(lines, preferred_sources)
+    result = subprocess.run(
+        ["gemini", "-p", prompt],
+        capture_output=True, text=True, timeout=60
     )
-    return response.json()["embedding"]
+    result.check_returncode()
 
-def deduplicate_articles(articles: list[Article], config: dict) -> list[Article]:
-    # Stage 1: Remove exact URL duplicates
-    url_seen = {}
-    for a in articles:
-        if a.link not in url_seen or a.published > url_seen[a.link].published:
-            url_seen[a.link] = a
-    unique_by_url = list(url_seen.values())
-
-    # Stage 2: Cluster by title similarity
-    embeddings = [get_embedding(a.title, config["embedding_model"]) for a in unique_by_url]
-    clustering = AgglomerativeClustering(
-        n_clusters=None,
-        distance_threshold=1 - config["dedup_threshold"],
-        metric="cosine",
-        linkage="average"
-    )
-    labels = clustering.fit_predict(embeddings)
-
-    # Select representative from each cluster
-    return select_representatives(unique_by_url, labels, config.get("preferred_sources", []))
+    indices = _parse_indices(result.stdout.strip(), len(articles))
+    return [articles[i] for i in indices]
 ```
+
+**Why Gemini over Embedding-based Clustering:**
+- Embedding models measure vector distance and struggle with paraphrasing (e.g., "Fed hikes 25bp" vs "Federal Reserve raises rates by a quarter point")
+- Gemini understands natural language semantics and correctly identifies such cases as the same story
+- No local model infrastructure (Ollama) required
 
 **Deduplication Criteria:**
 - Same URL (exact match) → Stage 1
-- Similar title (>85% cosine similarity) → Stage 2
+- Same news story regardless of wording → Stage 2 (Gemini)
 
 ---
 
@@ -373,11 +364,10 @@ schedule:
   interval_hours: 24
   time_window_hours: 24  # Fetch articles from last N hours
 
-# LLM Configuration (Ollama)
-llm:
-  base_url: "${OLLAMA_BASE_URL}"
-  embedding_model: "nomic-embed-text"  # Recommended: dedicated embedding model
-  dedup_threshold: 0.85  # Cosine similarity threshold for deduplication
+# Gemini CLI Configuration
+gemini:
+  model: "gemini-2.0-flash"  # Model passed to gemini CLI (default: uses CLI default)
+  dedup_batch_size: 80  # Max articles per Gemini request; splits into batches if exceeded
 
 # Deduplication Settings
 deduplication:
@@ -416,7 +406,6 @@ GMAIL_ADDRESS=your.email@gmail.com
 GMAIL_APP_PASSWORD=your-app-password-here
 PERSONAL_EMAIL=your.email@gmail.com
 COMPANY_EMAIL=your.email@company.com
-OLLAMA_BASE_URL=http://localhost:11434
 ```
 
 ---
@@ -429,8 +418,8 @@ OLLAMA_BASE_URL=http://localhost:11434
 | RSS Fetcher | Feed parse error | Log warning, continue |
 | RSS Fetcher | No articles found | Log info, continue |
 | Time Filter | Invalid date | Skip article, log warning |
-| LLM Deduplicator | Ollama unavailable | Send error email, log ERROR, abort. Do not update state. |
-| LLM Deduplicator | Model not found | Send error email, log CRITICAL, abort. Do not update state. |
+| Gemini Deduplicator | Gemini CLI unavailable / error | Configurable: skip dedup (`send_anyway`) or abort (`fail`) |
+| Gemini Deduplicator | Output parse failure | Same as CLI unavailable; apply `on_dedup_failure` behavior |
 | HTML Builder | Template error | Exit with error |
 | Email Sender | Auth failure | Exit with error, send alert if possible |
 | Email Sender | Network error | Retry 3 times with exponential backoff |
@@ -535,13 +524,13 @@ python src/main.py --force
 **requirements.txt:**
 ```
 feedparser>=6.0.0
-requests>=2.28.0
 pyyaml>=6.0
 python-dotenv>=1.0.0
 jinja2>=3.1.0
-scikit-learn>=1.3.0
-numpy>=1.24.0
 ```
+
+**External CLI dependency:**
+- `gemini` CLI must be installed and authenticated (`gemini auth login`)
 
 ---
 
@@ -561,10 +550,10 @@ numpy>=1.24.0
    # Edit .env with your Gmail credentials
    ```
 
-3. **Verify Ollama is running:**
+3. **Verify Gemini CLI is installed and authenticated:**
    ```bash
-   ollama list
-   # Should show available models including nomic-embed-text
+   gemini --version
+   gemini auth login  # if not yet authenticated
    ```
 
 4. **Test the pipeline:**
