@@ -12,7 +12,7 @@ schedule:
 # Gemini Configuration
 gemini:
   model: "gemini-2.0-flash"
-  dedup_batch_size: 80
+  dedup_batch_size: 3000
 
 # Deduplication Settings
 deduplication:
