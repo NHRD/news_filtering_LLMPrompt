@@ -42,6 +42,10 @@ output:
   log_file: "./logs/news_filter.log"
   state_file: "./state/last_run.json"
 
+translation:
+  batch_size: 200
+  on_translate_failure: "skip"
+
 # System Configuration
 system:
   poweroff_after_run: true
