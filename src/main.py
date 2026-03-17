@@ -4,7 +4,7 @@ import argparse
 import logging
 import subprocess
 import time
-from datetime import timezone
+from datetime import timedelta, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -13,6 +13,8 @@ try:
     from .deduplicator import DeduplicationError, deduplicate_articles
     from .email_sender import send_email
     from .html_builder import build_email_html, build_error_html
+    from .index_writer import write_index
+    from .numbering import number_articles
     from .rss_fetcher import fetch_articles, parse_opml
     from .time_filter import (
         filter_recent_articles,
@@ -20,11 +22,14 @@ try:
         now_utc,
         save_last_run_timestamp,
     )
+    from .translator import TranslationError, translate_articles
 except ImportError:  # pragma: no cover
     from config import AppConfig, load_config
     from deduplicator import DeduplicationError, deduplicate_articles
     from email_sender import send_email
     from html_builder import build_email_html, build_error_html
+    from index_writer import write_index
+    from numbering import number_articles
     from rss_fetcher import fetch_articles, parse_opml
     from time_filter import (
         filter_recent_articles,
@@ -32,6 +37,7 @@ except ImportError:  # pragma: no cover
         now_utc,
         save_last_run_timestamp,
     )
+    from translator import TranslationError, translate_articles
 
 
 def _setup_logging(log_file: str) -> None:
@@ -128,7 +134,10 @@ def run_pipeline(config, dry_run=False, fetch_only=False, force=False):
     logging.info("[Deduplicator] Reduced to %s unique articles", len(deduped))
 
     total_unique = len(deduped)
-    capped = deduped[: config.email.max_articles_per_email]
+
+    # Truncation: limit to max_articles_per_email (published descending, top N)
+    sorted_deduped = sorted(deduped, key=lambda a: a.published, reverse=True)
+    capped = sorted_deduped[: config.email.max_articles_per_email]
     truncation_message = ""
     if len(capped) < total_unique:
         truncation_message = f"Showing the {len(capped)} most recent articles out of {total_unique} found."
@@ -139,24 +148,44 @@ def run_pipeline(config, dry_run=False, fetch_only=False, force=False):
             len(capped),
         )
 
+    # Translation
+    if config.translation.enabled:
+        try:
+            translated = translate_articles(capped, config)
+        except TranslationError as exc:
+            logging.error("[Main] Pipeline aborted due to translation failure: %s", exc)
+            return 1
+    else:
+        translated = capped
+
+    # Numbering
+    numbered = number_articles(translated)
+
     html = build_email_html(
-        capped,
+        numbered,
         truncation_message=truncation_message,
         time_window_hours=config.schedule.time_window_hours,
     )
     logging.info("[HTML Builder] Generated email (%s bytes)", len(html.encode("utf-8")))
     _write_html_if_needed(config, html)
 
+    # Index writing
+    if config.index.save_index:
+        write_index(numbered, config)
+
+    now_dt = now_utc()
+    jst = timezone(timedelta(hours=9))
+    session = "AM" if now_dt.astimezone(jst).hour < 12 else "PM"
     window_start = cutoff.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    window_end = now_utc().astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    subject = f"News Digest | {len(capped)} articles | {window_start} - {window_end}"
+    window_end = now_dt.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    subject = f"News Digest | {session} | {len(capped)} articles | {window_start} - {window_end}"
 
     pipeline_success = False
     if dry_run:
         logging.info("[Main] Dry-run mode: email not sent")
         pipeline_success = True
     else:
-        if not capped:
+        if not numbered:
             logging.info("[Main] No articles to send")
             pipeline_success = True
         else:
