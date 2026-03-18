@@ -2,6 +2,7 @@
 
 import logging
 from typing import Dict, List
+from urllib.parse import urlparse, urlunparse
 
 import subprocess
 
@@ -18,13 +19,27 @@ class DeduplicationError(Exception):
     pass
 
 
+def _normalize_url(url):
+    # type: (str) -> str
+    """Strip query string and fragment for deduplication key.
+
+    WSJ and other publishers distribute the same article across multiple RSS feeds
+    with different tracking parameters (e.g. ?mod=rss_markets_main vs
+    ?mod=pls_whats_news_us_business_f). Stripping these ensures they are
+    recognised as duplicates in Stage 1 before Gemini is invoked.
+    """
+    parsed = urlparse(url)
+    return urlunparse(parsed._replace(query="", fragment=""))
+
+
 def _dedup_by_exact_url(articles):
     # type: (List[Article]) -> List[Article]
     by_url = {}  # type: Dict[str, Article]
     for article in articles:
-        existing = by_url.get(article.link)
+        key = _normalize_url(article.link)
+        existing = by_url.get(key)
         if existing is None or article.published > existing.published:
-            by_url[article.link] = article
+            by_url[key] = article
     return list(by_url.values())
 
 
@@ -76,7 +91,7 @@ def _deduplicate_batch(articles, preferred_sources, model):
     lines = [f"{i + 1}. {article.title} ({article.source})" for i, article in enumerate(articles)]
     prompt = _build_prompt(lines, preferred_sources, model)
     result = subprocess.run(
-        ["gemini", "-p", prompt],
+        ["/home/naohisa-harada/.nvm/versions/node/v22.22.1/bin/gemini", "-p", prompt],
         capture_output=True,
         text=True,
         timeout=60,
@@ -127,7 +142,8 @@ def deduplicate_articles(articles, config):
         logging.info("[Deduplicator] Stage 2 title clustering: %s -> %s", len(stage1), len(stage2))
         return stage2
     except Exception as exc:
-        msg = f"Stage 2 Gemini deduplication failed: {exc}"
+        stderr = getattr(exc, "stderr", None)
+        msg = f"Stage 2 Gemini deduplication failed: {exc} | stderr: {stderr}"
         if config.deduplication.on_dedup_failure == "send_anyway":
             stage1.sort(key=lambda a: a.published, reverse=True)
             logging.warning("[Deduplicator] %s. Returning Stage 1 output.", msg)

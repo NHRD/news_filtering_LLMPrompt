@@ -15,7 +15,7 @@ from src.config import (
     ScheduleConfig,
     SystemConfig,
 )
-from src.deduplicator import DeduplicationError, _dedup_by_exact_url, deduplicate_articles
+from src.deduplicator import DeduplicationError, _dedup_by_exact_url, _normalize_url, deduplicate_articles
 
 
 def _dt(hours_ago=0):
@@ -67,6 +67,30 @@ def test_ut_004_2_keep_most_recent():
     deduped = _dedup_by_exact_url([old, new])
 
     assert deduped == [new]
+
+
+def test_ut_004_4_remove_query_param_duplicates():
+    """Same base URL with different ?mod= tracking params should be deduplicated.
+
+    Reproduces the WSJ multi-feed duplicate pattern observed on 2026-03-18:
+    e.g. .../eea7029e vs .../eea7029e?mod=pls_whats_news_us_business_f
+    """
+    articles = [
+        _article("old",    "https://www.wsj.com/article/xyz", hours_ago=3),
+        _article("recent", "https://www.wsj.com/article/xyz?mod=rss_markets_main", hours_ago=2),
+        _article("newest", "https://www.wsj.com/article/xyz?mod=pls_whats_news_us_business_f", hours_ago=1),
+    ]
+
+    deduped = _dedup_by_exact_url(articles)
+
+    assert len(deduped) == 1
+    assert deduped[0].title == "newest"
+
+
+def test_ut_004_5_normalize_url_strips_query_and_fragment():
+    assert _normalize_url("https://example.com/a?foo=1&bar=2#section") == "https://example.com/a"
+    assert _normalize_url("https://example.com/a") == "https://example.com/a"
+    assert _normalize_url("https://example.com/a#only-fragment") == "https://example.com/a"
 
 
 def test_ut_004_3_handle_all_unique():
