@@ -12,3 +12,4 @@ class Article(NamedTuple):
     published: datetime
     source: str
     category: str
+    title_ja: str = ""

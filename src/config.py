@@ -53,6 +53,22 @@ class SystemConfig(NamedTuple):
     poweroff_after_run: bool
 
 
+class TranslationConfig(NamedTuple):
+    enabled: bool
+    batch_size: int
+    on_translate_failure: str
+
+
+class IndexConfig(NamedTuple):
+    save_index: bool
+    index_dir: str
+    max_files: int
+
+
+_DEFAULT_TRANSLATION = TranslationConfig(enabled=True, batch_size=80, on_translate_failure="skip")
+_DEFAULT_INDEX = IndexConfig(save_index=True, index_dir="./output", max_files=3)
+
+
 class AppConfig(NamedTuple):
     feeds: FeedConfig
     schedule: ScheduleConfig
@@ -61,6 +77,8 @@ class AppConfig(NamedTuple):
     email: EmailConfig
     output: OutputConfig
     system: SystemConfig
+    translation: TranslationConfig = _DEFAULT_TRANSLATION
+    index: IndexConfig = _DEFAULT_INDEX
 
 
 def _resolve_env(value: Any) -> Any:
@@ -98,6 +116,8 @@ def load_config(path: str = "config.yaml") -> AppConfig:
     email = cfg.get("email", {})
     output = cfg.get("output", {})
     system = cfg.get("system", {})
+    translation = cfg.get("translation", {})
+    index = cfg.get("index", {})
 
     return AppConfig(
         feeds=FeedConfig(
@@ -133,5 +153,15 @@ def load_config(path: str = "config.yaml") -> AppConfig:
         ),
         system=SystemConfig(
             poweroff_after_run=bool(system.get("poweroff_after_run", False)),
+        ),
+        translation=TranslationConfig(
+            enabled=bool(translation.get("enabled", True)),
+            batch_size=int(translation.get("batch_size", 80)),
+            on_translate_failure=translation.get("on_translate_failure", "skip"),
+        ),
+        index=IndexConfig(
+            save_index=bool(index.get("save_index", True)),
+            index_dir=index.get("index_dir", "./output"),
+            max_files=int(index.get("max_files", 3)),
         ),
     )

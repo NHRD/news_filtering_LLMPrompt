@@ -36,14 +36,14 @@
             <outline type="rss" text="Autoblog News" title="Autoblog News" xmlUrl="http://www.autoblog.com/rss.xml" htmlUrl="https://www.autoblog.com"/>
             <outline type="rss" text="Electrek" title="Electrek" xmlUrl="http://electrek.co/feed/" htmlUrl="https://electrek.co/"/>
             <outline type="rss" text="Car News | Latest Motoring Headlines | Cars UK" title="Car News | Latest Motoring Headlines | Cars UK" xmlUrl="http://www.carsuk.net/feed/" htmlUrl="https://www.carsuk.net/car-news/"/>
-            <outline type="rss" text="note #AI" title="note #AI" xmlUrl="https://note.com/hashtag/ai/rss" htmlUrl="https://note.com/hashtag/ai"/>
-            <outline type="rss" text="note #自動運転" title="note #自動運転" xmlUrl="https://note.com/hashtag/%E8%87%AA%E5%8B%95%E9%81%8B%E8%BB%A2/rss" htmlUrl="https://note.com/hashtag/%E8%87%AA%E5%8B%95%E9%81%8B%E8%BB%A2"/>
+
             <outline type="rss" text="SemiAnalysis" title="SemiAnalysis" xmlUrl="https://newsletter.semianalysis.com/feed" htmlUrl="https://newsletter.semianalysis.com/"/>
             <outline type="rss" text="Gary Marcus" title="Gary Marcus" xmlUrl="https://garymarcus.substack.com/feed" htmlUrl="https://garymarcus.substack.com/"/>
             <outline type="rss" text="AI Futures" title="AI Futures" xmlUrl="https://blog.ai-futures.org/feed" htmlUrl="https://blog.ai-futures.org/"/>
             <outline type="rss" text="Give a Fig" title="Give a Fig" xmlUrl="https://www.yesigiveafig.com/feed" htmlUrl="https://www.yesigiveafig.com/"/>
             <outline type="rss" text="Deep Learning Focus (Cameron R. Wolfe)" title="Deep Learning Focus" xmlUrl="https://cameronrwolfe.substack.com/feed" htmlUrl="https://cameronrwolfe.substack.com/"/>
             <outline type="rss" text="The Verge" title="The Verge" xmlUrl="https://www.theverge.com/rss/index.xml" htmlUrl="https://www.theverge.com"/>
+            <outline type="rss" text="Tom's Hardware" title="Tom's Hardware" xmlUrl="https://www.tomshardware.com/feeds/all" htmlUrl="https://www.tomshardware.com"/>
         </outline>
         
         <outline text="Finance" title="Finance">
@@ -68,6 +68,14 @@
             <outline type="rss" text="Semiaccurate" title="Semiaccurate" xmlUrl="http://semiaccurate.com/feed/" htmlUrl="https://www.semiaccurate.com/"/>
             <outline type="rss" text="Modular Money" title="Modular Money" xmlUrl="https://modularmoney.co/feed/" htmlUrl="https://modularmoney.co"/>
             <outline type="rss" text="日本経済新聞" title="日本経済新聞" xmlUrl="https://rsshub.app/nikkei/index" htmlUrl="https://www.nikkei.com"/>
+            <outline type="rss" text="WSJ World News" title="WSJ World News" xmlUrl="https://feeds.content.dowjones.io/public/rss/RSSWorldNews" htmlUrl="https://www.wsj.com"/>
+            <outline type="rss" text="WSJ US Business" title="WSJ US Business" xmlUrl="https://feeds.content.dowjones.io/public/rss/WSJcomUSBusiness" htmlUrl="https://www.wsj.com/news/business"/>
+            <outline type="rss" text="WSJ Markets" title="WSJ Markets" xmlUrl="https://feeds.content.dowjones.io/public/rss/RSSMarketsMain" htmlUrl="https://www.wsj.com/news/markets"/>
+            <outline type="rss" text="WSJ Technology" title="WSJ Technology" xmlUrl="https://feeds.content.dowjones.io/public/rss/socialtechfeed" htmlUrl="https://www.wsj.com/news/technology"/>
+            <outline type="rss" text="WSJ U.S. News" title="WSJ U.S. News" xmlUrl="https://feeds.content.dowjones.io/public/rss/RSSUSNews" htmlUrl="https://www.wsj.com/news/us-news"/>
+            <outline type="rss" text="WSJ Politics" title="WSJ Politics" xmlUrl="https://feeds.content.dowjones.io/public/rss/socialpoliticsfeed" htmlUrl="https://www.wsj.com/news/politics"/>
+            <outline type="rss" text="WSJ Economy" title="WSJ Economy" xmlUrl="https://feeds.content.dowjones.io/public/rss/socialeconomyfeed" htmlUrl="https://www.wsj.com/economy"/>
+            <outline type="rss" text="WSJ Real Estate" title="WSJ Real Estate" xmlUrl="https://feeds.content.dowjones.io/public/rss/latestnewsrealestate" htmlUrl="https://www.wsj.com/real-estate"/>
         </outline>
     </body>
 </opml>

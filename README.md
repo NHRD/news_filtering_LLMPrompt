@@ -1,6 +1,6 @@
 # RSS News Filtering System
 
-RSS フィードから過去24時間以内の記事を取得し、Gemini CLI によるタイトル類似度クラスタリングで重複排除を行い、HTML ダイジェストメールを Gmail で送信するシステム。
+RSS フィードから過去24時間以内の記事を取得し、Gemini CLI によるタイトル類似度クラスタリングで重複排除を行い、英語タイトルを日本語に翻訳してから HTML ダイジェストメールを Gmail で送信するシステム。
 
 ## 処理フロー
 
@@ -9,14 +9,17 @@ OPML (フィード一覧)
   → RSS 取得 (feedparser)
   → 時間フィルタ (過去24時間)
   → 重複排除 (URL完全一致 + Gemini CLI によるタイトルクラスタリング)
+  → 翻訳 (Gemini CLI による英語→日本語タイトル翻訳)
+  → 番号付け (カテゴリ別アルファベット順・日付降順で連番付与)
   → HTML メール生成 (Jinja2)
+  → インデックス保存 (JSON ファイル)
   → Gmail SMTP 送信
 ```
 
 ## 必要なもの
 
 - Python 3.12+ (実行環境は Python 3.6+ 互換)
-- [Gemini CLI](https://github.com/google-gemini/gemini-cli) (重複排除用)
+- [Gemini CLI](https://github.com/google-gemini/gemini-cli) (重複排除・翻訳用)
 - Gmail アカウント (2段階認証 + アプリパスワード)
 - RSS フィード一覧 (OPML ファイル)
 
@@ -85,12 +88,20 @@ RSS フィード一覧（OPMLファイル）をプロジェクトディレクト
 
 | 項目 | デフォルト | 説明 |
 |---|---|---|
-| `gemini.model` | `gemini-2.0-flash` | 重複排除に使用する Gemini モデル名。 |
+| `gemini.model` | `gemini-2.0-flash` | 重複排除・翻訳に使用する Gemini モデル名。 |
 | `gemini.dedup_batch_size` | `80` | 1回の Gemini 呼び出しで処理する記事数の上限。記事数がこれを超えると複数回に分割して呼び出される。 |
 | `deduplication.preferred_sources` | (リスト) | 重複記事の中から1つ選ぶ際、優先的に採用するソース名のリスト（例: Reuters, Bloomberg等）。 |
 | `deduplication.on_dedup_failure` | `send_anyway` | Gemini 呼び出し失敗時の動作。`send_anyway`: URL重複排除のみの結果でメール送信。`abort`: パイプラインを中断してエラーメールを送信。 |
 
-### 4. メール送信設定 (`email`)
+### 4. 翻訳設定 (`translation`)
+
+| 項目 | デフォルト | 説明 |
+|---|---|---|
+| `translation.enabled` | `true` | 翻訳機能の ON/OFF。`false` にすると英語タイトルのままメールを生成する。 |
+| `translation.batch_size` | `80` | 1回の Gemini 呼び出しで翻訳する記事数の上限。 |
+| `translation.on_translate_failure` | `skip` | 翻訳失敗時の動作。`skip`: 元の英語タイトルをそのまま使用。`fail`: パイプラインを中断してエラーを返す。 |
+
+### 5. メール送信設定 (`email`)
 
 | 項目 | デフォルト | 説明 |
 |---|---|---|
@@ -101,7 +112,7 @@ RSS フィード一覧（OPMLファイル）をプロジェクトディレクト
 | `recipients` | (リスト) | 受信者のメールアドレスリスト。 |
 | `max_articles_per_email` | `200` | 1通のメールに含める最大記事数。超過分は切り捨てられ、フッターに通知が表示されます。 |
 
-### 5. 出力・状態管理 (`output`)
+### 6. 出力・状態管理 (`output`)
 
 | 項目 | デフォルト | 説明 |
 |---|---|---|
@@ -110,11 +121,19 @@ RSS フィード一覧（OPMLファイル）をプロジェクトディレクト
 | `log_file` | `./logs/news_filter.log` | 実行ログの出力先。 |
 | `state_file` | `./state/last_run.json` | 最終実行時刻を記録するファイル（重複取得防止用）。 |
 
-### 6. システム動作 (`system`)
+### 7. インデックス保存設定 (`index`)
 
 | 項目 | デフォルト | 説明 |
 |---|---|---|
-| `poweroff_after_run` | `false` | `true` に設定すると、全処理が正常完了した 3 分後に PC を自動シャットダウンします。 |
+| `index.save_index` | `true` | 記事一覧を JSON インデックスファイルとして保存するかどうか。 |
+| `index.index_dir` | `./output` | JSON インデックスの保存先ディレクトリ。 |
+| `index.max_files` | `3` | 保持するインデックスファイルの最大数。超過した古いファイルは FIFO で自動削除される。 |
+
+### 8. システム動作 (`system`)
+
+| 項目 | デフォルト | 説明 |
+|---|---|---|
+| `system.poweroff_after_run` | `false` | `true` に設定すると、全処理が正常完了した 3 分後に PC を自動シャットダウンします。 |
 
 ---
 
@@ -146,6 +165,11 @@ Gemini CLI の呼び出しが失敗した場合、`deduplication.on_dedup_failur
 
 - `send_anyway`（デフォルト）: URL重複排除のみの結果（Stage 1）でメール送信を続行します。
 - `abort`: 処理を中断し、エラー内容を記載した通知メールを全宛先に送信します。エラーログを記録し、非ゼロの終了コードで終了します。`state/last_run.json` は更新されないため、次回実行時に今回の時間ウィンドウの記事が再処理されます。
+
+翻訳が失敗した場合は、`translation.on_translate_failure` の設定に応じて動作します：
+
+- `skip`（デフォルト）: 翻訳できなかった記事は英語タイトルのままメールを送信します。
+- `fail`: パイプラインを中断して非ゼロの終了コードで終了します。
 
 ## 使い方
 
@@ -215,7 +239,10 @@ news_filtering/
 │   ├── rss_fetcher.py        # OPML 解析 + RSS 取得
 │   ├── time_filter.py        # 時間フィルタリング
 │   ├── deduplicator.py       # 2段階重複排除 (URL + Gemini CLI タイトルクラスタリング)
+│   ├── translator.py         # Gemini CLI による英語→日本語タイトル翻訳
+│   ├── numbering.py          # カテゴリ別・日付降順での記事連番付与
 │   ├── html_builder.py       # HTML メール生成
+│   ├── index_writer.py       # JSON インデックスファイル保存 (FIFO rotation)
 │   └── email_sender.py       # Gmail SMTP 送信
 ├── templates/
 │   ├── email.html            # HTML メールテンプレート (Jinja2)
@@ -247,6 +274,6 @@ news_filtering/
 
 `src/deduplicator.py` ファイルの `deduplicate_articles` 関数の冒頭にあるコメントアウトを解除します。
 
-### 3. 類似度閾値の調整
+### 3. バッチサイズの調整
 
-`config.yaml` の `llm.dedup_threshold` の値を調整して実行・確認を繰り返します。
+`config.yaml` の `gemini.dedup_batch_size` の値を調整して実行・確認を繰り返します。

@@ -1,0 +1,120 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0 -- /home/naohisa-harada/Documents/news_filtering_LLMPrompt/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/naohisa-harada/Documents/news_filtering_LLMPrompt
+plugins: cov-7.0.0
+collecting ... collected 93 items
+
+tests/test_boundary.py::test_bc_001_empty_feed_pipeline_completes PASSED [  1%]
+tests/test_boundary.py::test_bc_005_mixed_timezone_articles_normalized_to_utc PASSED [  2%]
+tests/test_config.py::test_ut_008_1_load_config_yaml PASSED              [  3%]
+tests/test_config.py::test_ut_008_2_expand_env_vars PASSED               [  4%]
+tests/test_config.py::test_ut_008_3_handle_missing_file PASSED           [  5%]
+tests/test_config.py::test_ut_008_4_handle_missing_env_var PASSED        [  6%]
+tests/test_config.py::test_ut_008_5_preferred_sources_loading PASSED     [  7%]
+tests/test_deduplicator.py::test_ut_004_1_remove_duplicate_urls PASSED   [  8%]
+tests/test_deduplicator.py::test_ut_004_2_keep_most_recent PASSED        [  9%]
+tests/test_deduplicator.py::test_ut_004_3_handle_all_unique PASSED       [ 10%]
+tests/test_deduplicator.py::test_ut_005_1_cluster_similar_titles PASSED  [ 11%]
+tests/test_deduplicator.py::test_ut_005_2_keep_different_titles PASSED   [ 12%]
+tests/test_deduplicator.py::test_ut_005_3_prefer_preferred_source PASSED [ 13%]
+tests/test_deduplicator.py::test_ut_005_4_prefer_recent_if_no_preferred PASSED [ 15%]
+tests/test_deduplicator.py::test_ut_005_5_handle_gemini_timeout PASSED   [ 16%]
+tests/test_deduplicator.py::test_ut_005_6_handle_empty_list PASSED       [ 17%]
+tests/test_deduplicator.py::test_ut_005_7_on_dedup_failure_fail PASSED   [ 18%]
+tests/test_deduplicator.py::test_ut_005_8_on_dedup_failure_send_anyway PASSED [ 19%]
+tests/test_email_sender.py::test_ut_007_1_send_email_mocked PASSED       [ 20%]
+tests/test_email_sender.py::test_ut_007_2_handle_auth_failure PASSED     [ 21%]
+tests/test_email_sender.py::test_ut_007_3_handle_network_error_with_retries PASSED [ 22%]
+tests/test_email_sender.py::test_ut_007_4_multiple_recipients PASSED     [ 23%]
+tests/test_html_builder.py::test_ut_006_1_generate_valid_html PASSED     [ 24%]
+tests/test_html_builder.py::test_ut_006_2_group_by_category PASSED       [ 25%]
+tests/test_html_builder.py::test_ut_006_3_sort_by_date PASSED            [ 26%]
+tests/test_html_builder.py::test_ut_006_4_escape_html_in_title PASSED    [ 27%]
+tests/test_html_builder.py::test_ut_006_5_handle_empty_list PASSED       [ 29%]
+tests/test_html_builder.py::test_ut_006_6_truncation_message_display PASSED [ 30%]
+tests/test_html_builder.py::test_ut_006_7_no_column_rendered PASSED      [ 31%]
+tests/test_html_builder.py::test_ut_006_8_title_ja_displayed PASSED      [ 32%]
+tests/test_html_builder.py::test_ut_006_9_title_ja_fallback_to_title PASSED [ 33%]
+tests/test_html_builder.py::test_ut_006_10_group_articles_no_resorting PASSED [ 34%]
+tests/test_html_builder.py::test_ut_006_11_numbered_articles_nos_in_html PASSED [ 35%]
+tests/test_index_writer.py::test_ut_011_1_write_am_session PASSED        [ 36%]
+tests/test_index_writer.py::test_ut_011_2_write_pm_session PASSED        [ 37%]
+tests/test_index_writer.py::test_ut_011_3_json_schema_all_fields PASSED  [ 38%]
+tests/test_index_writer.py::test_ut_011_4_fifo_max_files PASSED          [ 39%]
+tests/test_index_writer.py::test_ut_011_5_fifo_am_before_pm PASSED       [ 40%]
+tests/test_index_writer.py::test_ut_011_6_auto_create_directory PASSED   [ 41%]
+tests/test_index_writer.py::test_ut_011_7_save_index_false_skips_write PASSED [ 43%]
+tests/test_index_writer.py::test_ut_011_8_io_error_does_not_raise PASSED [ 44%]
+tests/test_index_writer.py::test_ut_011_9_article_count_correct PASSED   [ 45%]
+tests/test_integration.py::test_it_001_1_fetch_real_like_and_filter_by_time PASSED [ 46%]
+tests/test_integration.py::test_it_001_2_state_persistence_across_runs PASSED [ 47%]
+tests/test_integration.py::test_it_002_1_filter_then_deduplicate PASSED  [ 48%]
+tests/test_integration.py::test_it_002_2_dedup_with_gemini_running PASSED [ 49%]
+tests/test_integration.py::test_it_003_1_build_html_from_deduped_articles PASSED [ 50%]
+tests/test_integration.py::test_it_004_1_build_and_send_mocked_smtp PASSED [ 51%]
+tests/test_integration.py::test_e2e_001_1_run_pipeline_dry_run PASSED    [ 52%]
+tests/test_integration.py::test_e2e_001_2_run_pipeline_full_with_mocked_email PASSED [ 53%]
+tests/test_integration.py::test_e2e_001_3_run_with_gemini_down_fails PASSED [ 54%]
+tests/test_integration.py::test_e2e_002_1_dry_run_flag PASSED            [ 55%]
+tests/test_integration.py::test_e2e_002_2_fetch_only_flag PASSED         [ 56%]
+tests/test_integration.py::test_e2e_002_3_force_flag PASSED              [ 58%]
+tests/test_integration.py::test_it_005_1_translator_numbering_html_builder PASSED [ 59%]
+tests/test_integration.py::test_it_005_2_translator_numbering_index_writer PASSED [ 60%]
+tests/test_integration.py::test_it_005_3_numbering_order_consistent_html_and_json PASSED [ 61%]
+tests/test_integration.py::test_e2e_003_1_translation_enabled_full_pipeline PASSED [ 62%]
+tests/test_integration.py::test_e2e_003_2_translation_disabled_full_pipeline PASSED [ 63%]
+tests/test_integration.py::test_e2e_003_3_save_index_true_full_pipeline PASSED [ 64%]
+tests/test_numbering.py::test_ut_010_1_single_category_sequential_from_1 PASSED [ 65%]
+tests/test_numbering.py::test_ut_010_2_multiple_categories_alphabetical_order PASSED [ 66%]
+tests/test_numbering.py::test_ut_010_3_within_category_published_desc PASSED [ 67%]
+tests/test_numbering.py::test_ut_010_4_empty_list PASSED                 [ 68%]
+tests/test_numbering.py::test_ut_010_5_sequential_numbers_no_gap PASSED  [ 69%]
+tests/test_numbering.py::test_ut_010_6_cross_category_sequential PASSED  [ 70%]
+tests/test_rss_fetcher.py::test_ut_001_1_parse_valid_opml PASSED         [ 72%]
+tests/test_rss_fetcher.py::test_ut_001_2_skip_feedly_proxy_urls PASSED   [ 73%]
+tests/test_rss_fetcher.py::test_ut_001_3_handle_duplicate_feed_urls PASSED [ 74%]
+tests/test_rss_fetcher.py::test_ut_001_4_handle_empty_opml PASSED        [ 75%]
+tests/test_rss_fetcher.py::test_ut_001_5_handle_malformed_opml PASSED    [ 76%]
+tests/test_rss_fetcher.py::test_ut_002_1_fetch_valid_rss_feed PASSED     [ 77%]
+tests/test_rss_fetcher.py::test_ut_002_2_handle_feed_timeout PASSED      [ 78%]
+tests/test_rss_fetcher.py::test_ut_002_3_handle_malformed_feed PASSED    [ 79%]
+tests/test_rss_fetcher.py::test_ut_002_4_extract_article_metadata PASSED [ 80%]
+tests/test_rss_fetcher.py::test_ut_002_5_handle_missing_date PASSED      [ 81%]
+tests/test_time_filter.py::test_ut_003_1_filter_recent_articles PASSED   [ 82%]
+tests/test_time_filter.py::test_ut_003_2_filter_old_articles PASSED      [ 83%]
+tests/test_time_filter.py::test_ut_003_3_handle_timezone_aware_dates PASSED [ 84%]
+tests/test_time_filter.py::test_ut_003_4_handle_timezone_naive_dates PASSED [ 86%]
+tests/test_time_filter.py::test_ut_003_5_handle_none_date PASSED         [ 87%]
+tests/test_time_filter.py::test_ut_003_6_use_last_run_for_recovery PASSED [ 88%]
+tests/test_translator.py::test_ut_009_1_translate_all_success PASSED     [ 89%]
+tests/test_translator.py::test_ut_009_2_batch_split PASSED               [ 90%]
+tests/test_translator.py::test_ut_009_3_individual_line_parse_failure_fallback PASSED [ 91%]
+tests/test_translator.py::test_ut_009_4_out_of_range_number_fallback PASSED [ 92%]
+tests/test_translator.py::test_ut_009_5_duplicate_number_last_wins PASSED [ 93%]
+tests/test_translator.py::test_ut_009_6_all_parse_fail_skip PASSED       [ 94%]
+tests/test_translator.py::test_ut_009_7_all_parse_fail_fail_mode PASSED  [ 95%]
+tests/test_translator.py::test_ut_009_8_gemini_cli_error_skip PASSED     [ 96%]
+tests/test_translator.py::test_ut_009_9_gemini_cli_exception_skip PASSED [ 97%]
+tests/test_translator.py::test_ut_009_10_translation_disabled_in_pipeline PASSED [ 98%]
+tests/test_translator.py::test_ut_009_11_empty_list PASSED               [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.12-final-0 _______________
+
+Name                  Stmts   Miss  Cover   Missing
+---------------------------------------------------
+src/__init__.py           9      0   100%
+src/config.py            85      0   100%
+src/deduplicator.py      74      5    93%   51, 58, 60, 63, 70
+src/email_sender.py      33      1    97%   49
+src/html_builder.py      50      0   100%
+src/index_writer.py      48      7    85%   35-37, 83-86
+src/main.py             127     37    71%   44-46, 59-64, 69, 81-93, 128-129, 143-144, 155-157, 194-196, 206, 211-214, 218
+src/numbering.py         17      0   100%
+src/rss_fetcher.py       83      6    93%   61, 75-76, 85-86, 115
+src/time_filter.py       65      8    88%   23, 36, 48, 51-52, 54-56
+src/translator.py        61      1    98%   55
+---------------------------------------------------
+TOTAL                   652     65    90%
+============================= 93 passed in 57.64s ==============================
