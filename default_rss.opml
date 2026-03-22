@@ -54,6 +54,8 @@
             <outline type="rss" text="ブルームバーグ 海外ニュース" title="ブルームバーグ 海外ニュース" xmlUrl="https://assets.wor.jp/rss/rdf/bloomberg/overseas.rdf" htmlUrl="https://www.bloomberg.co.jp/news/overseas"/>
             <outline type="rss" text="WSJ.com: US Business" title="WSJ.com: US Business" xmlUrl="https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml" htmlUrl="https://wsj.com"/>
             <outline type="rss" text="ZeroHedge News" title="ZeroHedge News" xmlUrl="http://feeds.feedburner.com/zerohedge/feed" htmlUrl="https://www.zerohedge.com"/>
+            <outline type="rss" text="The Credit Crunch" title="The Credit Crunch" xmlUrl="https://creditcrunch.blog/feed" htmlUrl="https://creditcrunch.blog"/>
+            <outline type="rss" text="Wolf Street" title="Wolf Street" xmlUrl="https://wolfstreet.com/feed/" htmlUrl="https://wolfstreet.com"/>
             <outline type="rss" text="ブルームバーグ マーケット" title="ブルームバーグ マーケット" xmlUrl="https://assets.wor.jp/rss/rdf/bloomberg/markets.rdf" htmlUrl="https://www.bloomberg.com/jp/markets"/>
             <outline type="rss" text="International" title="International" xmlUrl="http://www.economist.com/rss/international_rss.xml" htmlUrl="https://www.economist.com/international"/>
             <outline type="rss" text="United States" title="United States" xmlUrl="http://www.economist.com/feeds/print-sections/71/united-states.xml" htmlUrl="https://www.economist.com/united-states"/>
