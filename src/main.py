@@ -176,8 +176,8 @@ def run_pipeline(config, dry_run=False, fetch_only=False, force=False):
     now_dt = now_utc()
     jst = timezone(timedelta(hours=9))
     session = "AM" if now_dt.astimezone(jst).hour < 12 else "PM"
-    window_start = cutoff.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    window_end = now_dt.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    window_start = cutoff.astimezone(jst).strftime("%Y-%m-%d %H:%M JST")
+    window_end = now_dt.astimezone(jst).strftime("%Y-%m-%d %H:%M JST")
     subject = f"News Digest | {session} | {len(capped)} articles | {window_start} - {window_end}"
 
     pipeline_success = False
