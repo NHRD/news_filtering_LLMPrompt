@@ -43,6 +43,8 @@
             <outline type="rss" text="Deep Learning Focus (Cameron R. Wolfe)" title="Deep Learning Focus" xmlUrl="https://cameronrwolfe.substack.com/feed" htmlUrl="https://cameronrwolfe.substack.com/"/>
             <outline type="rss" text="The Verge" title="The Verge" xmlUrl="https://www.theverge.com/rss/index.xml" htmlUrl="https://www.theverge.com"/>
             <outline type="rss" text="Tom's Hardware" title="Tom's Hardware" xmlUrl="https://www.tomshardware.com/feeds/all" htmlUrl="https://www.tomshardware.com"/>
+            <outline type="rss" text="Wired" title="Wired" xmlUrl="https://www.wired.com/feed/rss" htmlUrl="https://www.wired.com"/>
+            <outline type="rss" text="Ars Technica" title="Ars Technica" xmlUrl="https://feeds.arstechnica.com/arstechnica/index" htmlUrl="https://arstechnica.com"/>
         </outline>
         
         <outline text="Finance" title="Finance">
