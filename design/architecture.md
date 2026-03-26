@@ -201,14 +201,16 @@ recent_articles = [a for a in articles if a.published >= cutoff]
 を付与する。これによりURLが異なってみえるため、修正前は Stage 1 を通過して重複として残っていた。
 クエリパラメータは記事の同一性判定に無関係なため、正規化してから比較することで Stage 1 で確実に除去できる。
 
-#### Stage 2: Title Deduplication via Gemini CLI
+#### Stage 2: Title Deduplication via Gemini CLI（2パス構成）
+
+Stage 2 は Stage 2a と Stage 2b の 2 パスで構成される。
+
+##### Stage 2a: 通常バッチで重複削除
 1. Sort articles by `title` alphabetically before batching. <!-- FIXED: Added sorting to ensure similar titles are more likely to appear in the same batch. -->
 2. Build a numbered list of `"N. [title] (source)"` from Stage 1 output
 3. If article count exceeds `gemini.dedup_batch_size` (default: 80), split into batches and process each batch independently
    - **バッチ内の番号は 1 から始まるローカル番号を使う。** Gemini への入力・出力はバッチごとに独立した 1 始まり番号とし、
      返却インデックスを元の articles スライス上のオフセットに変換して残す記事を決定する。
-     バッチまたぎの重複は検出できない（アーキテクチャ上の制約）。タイトルアルファベット順ソートにより
-     類似記事が同じバッチに収まる可能性を高めることで緩和する。
 4. Pass the list to Gemini CLI with the following prompt:
    ```
    以下はニュース記事のタイトル一覧です（番号. タイトル (ソース) の形式）。
@@ -221,6 +223,22 @@ recent_articles = [a for a in articles if a.published >= cutoff]
    ```
 5. Parse the comma-separated index list from Gemini's output
 6. Return the articles at the specified indices
+
+##### Stage 2b: 広バッチで境界をまたいだ重複を削除
+1. Stage 2a の出力を入力とする
+2. バッチサイズ 100 固定で `_deduplicate_by_gemini` を再度実行する
+   - Stage 2a のバッチ境界をまたいで残ってしまった重複記事を除去するのが目的
+   - より大きなバッチで処理することで、異なるバッチに分かれた類似記事を同一バッチ内に収めやすくする
+3. 処理後、`published` 降順でソートして返す
+
+**Stage 2 処理フロー:**
+```
+Stage 1 output
+    → Stage 2a (_deduplicate_by_gemini, batch_size=gemini.dedup_batch_size)
+    → Stage 2b (_deduplicate_by_gemini, batch_size=100)
+    → sort by published desc
+    → return
+```
 
 **Gemini CLI Integration:**
 ```python

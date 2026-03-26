@@ -131,16 +131,28 @@ def deduplicate_articles(articles, config):
     stage1 = _dedup_by_exact_url(articles)
     logging.info("[Deduplicator] Stage 1 URL dedup: %s -> %s", len(articles), len(stage1))
 
+    SECOND_PASS_BATCH_SIZE = 100
+
     try:
-        stage2 = _deduplicate_by_gemini(
+        # Stage 2a: 通常バッチで重複削除
+        stage2a = _deduplicate_by_gemini(
             articles=stage1,
             preferred_sources=config.deduplication.preferred_sources,
             model=config.gemini.model,
             dedup_batch_size=config.gemini.dedup_batch_size,
         )
-        stage2.sort(key=lambda a: a.published, reverse=True)
-        logging.info("[Deduplicator] Stage 2 title clustering: %s -> %s", len(stage1), len(stage2))
-        return stage2
+        logging.info("[Deduplicator] Stage 2a title clustering: %s -> %s", len(stage1), len(stage2a))
+
+        # Stage 2b: 大きなバッチで境界をまたいだ重複を削除
+        stage2b = _deduplicate_by_gemini(
+            articles=stage2a,
+            preferred_sources=config.deduplication.preferred_sources,
+            model=config.gemini.model,
+            dedup_batch_size=SECOND_PASS_BATCH_SIZE,
+        )
+        stage2b.sort(key=lambda a: a.published, reverse=True)
+        logging.info("[Deduplicator] Stage 2b wide-batch clustering: %s -> %s", len(stage2a), len(stage2b))
+        return stage2b
     except Exception as exc:
         stderr = getattr(exc, "stderr", None)
         msg = f"Stage 2 Gemini deduplication failed: {exc} | stderr: {stderr}"
