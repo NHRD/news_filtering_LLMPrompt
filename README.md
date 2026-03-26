@@ -99,6 +99,7 @@ RSS フィード一覧（OPMLファイル）をプロジェクトディレクト
 |---|---|---|
 | `translation.enabled` | `true` | 翻訳機能の ON/OFF。`false` にすると英語タイトルのままメールを生成する。 |
 | `translation.batch_size` | `80` | 1回の Gemini 呼び出しで翻訳する記事数の上限。 |
+| `translation.batch_interval_seconds` | `15` | 複数バッチに分割された場合、次のバッチを投げる前に待機する秒数。レート制限（429）対策。最後のバッチ後は待機しない。 |
 | `translation.on_translate_failure` | `skip` | 翻訳失敗時の動作。`skip`: 元の英語タイトルをそのまま使用。`fail`: パイプラインを中断してエラーを返す。 |
 
 ### 5. メール送信設定 (`email`)

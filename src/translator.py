@@ -3,6 +3,7 @@
 import logging
 import re
 import subprocess
+import time
 from typing import List
 
 try:
@@ -108,9 +109,12 @@ def translate_articles(articles, config):
     if len(articles) <= batch_size:
         return _translate_batch(articles, on_failure)
 
+    interval = config.translation.batch_interval_seconds
     translated = []
     for start in range(0, len(articles), batch_size):
         batch = articles[start : start + batch_size]
         translated.extend(_translate_batch(batch, on_failure))
+        if start + batch_size < len(articles):
+            time.sleep(interval)
 
     return translated

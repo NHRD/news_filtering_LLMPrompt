@@ -44,6 +44,7 @@ output:
 
 translation:
   batch_size: 200
+  batch_interval_seconds: 15
   on_translate_failure: "skip"
 
 # System Configuration
