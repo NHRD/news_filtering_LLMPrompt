@@ -94,7 +94,7 @@ def _deduplicate_batch(articles, preferred_sources, model):
         ["/home/naohisa-harada/.nvm/versions/node/v22.22.1/bin/gemini", "-p", prompt],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=300,
     )
     result.check_returncode()
     indices = _parse_indices(result.stdout.strip(), len(articles))

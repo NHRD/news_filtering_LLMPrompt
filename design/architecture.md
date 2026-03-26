@@ -237,7 +237,7 @@ def deduplicate_by_gemini(articles, preferred_sources, batch_size=80):
     prompt = _build_prompt(lines, preferred_sources)
     result = subprocess.run(
         ["gemini", "-p", prompt],
-        capture_output=True, text=True, timeout=60
+        capture_output=True, text=True, timeout=300
     )
     result.check_returncode()
 
@@ -331,7 +331,7 @@ Gemini の出力を行単位でパースする際、以下のケースを明示�
 ```python
 result = subprocess.run(
     ["gemini", "-p", prompt],
-    capture_output=True, text=True, timeout=120
+    capture_output=True, text=True, timeout=300
 )
 ```
 

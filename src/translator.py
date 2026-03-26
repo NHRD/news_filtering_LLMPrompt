@@ -45,7 +45,7 @@ def _translate_batch(articles, on_translate_failure):
             ["/home/naohisa-harada/.nvm/versions/node/v22.22.1/bin/gemini", "-p", prompt],
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=300,
         )
         result.check_returncode()
         output = result.stdout.strip()
