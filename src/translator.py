@@ -43,7 +43,7 @@ def _translate_batch(articles, on_translate_failure):
 
     try:
         result = subprocess.run(
-            ["/home/naohisa-harada/.nvm/versions/node/v22.22.1/bin/gemini", "-p", prompt],
+            ["/home/naohisa-harada/.nvm/versions/node/v22.22.1/bin/gemini", "-m", "gemini-2.0-flash", "-p", prompt],
             capture_output=True,
             text=True,
             timeout=300,
