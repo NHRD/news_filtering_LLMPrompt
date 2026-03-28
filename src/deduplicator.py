@@ -1,6 +1,7 @@
 """Two-stage article deduplication with URL match and Gemini CLI."""
 
 import logging
+import os
 from typing import Dict, List
 from urllib.parse import urlparse, urlunparse
 
@@ -48,6 +49,7 @@ def _build_prompt(lines, preferred_sources, model):
     preferred_sources_text = ", ".join(preferred_sources) if preferred_sources else "なし"
     numbered_list = "\n".join(lines)
     return (
+        "ソフトウェア開発のデータ処理タスクとして、以下のテキストリストを処理してください。\n"
         "以下はニュース記事のタイトル一覧です（番号. タイトル (ソース) の形式）。\n"
         "同じニュースを報じている記事をグループ化し、各グループから1記事だけ残してください。\n"
         "残す記事の選択基準（優先順）:\n"
@@ -95,6 +97,7 @@ def _deduplicate_batch(articles, preferred_sources, model):
         capture_output=True,
         text=True,
         timeout=300,
+        env=os.environ.copy(),
     )
     result.check_returncode()
     indices = _parse_indices(result.stdout.strip(), len(articles))
