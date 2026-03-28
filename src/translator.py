@@ -2,6 +2,7 @@
 
 import logging
 import re
+import os
 import subprocess
 import time
 from typing import List
@@ -35,18 +36,19 @@ def _build_prompt(lines):
     )
 
 
-def _translate_batch(articles, on_translate_failure):
-    # type: (List[Article], str) -> List[Article]
+def _translate_batch(articles, on_translate_failure, model="gemini-2.5-flash-lite"):
+    # type: (List[Article], str, str) -> List[Article]
     """Translate a single batch of articles (batch-local 1-based numbering)."""
     lines = [f"{i + 1}. {a.title}" for i, a in enumerate(articles)]
     prompt = _build_prompt(lines)
 
     try:
         result = subprocess.run(
-            ["/home/naohisa-harada/.nvm/versions/node/v22.22.1/bin/gemini", "-m", "gemini-2.0-flash", "-p", prompt],
+            ["/home/naohisa-harada/.nvm/versions/node/v22.22.1/bin/gemini", "-m", model, "-p", prompt],
             capture_output=True,
             text=True,
             timeout=300,
+            env=os.environ.copy(),
         )
         result.check_returncode()
         output = result.stdout.strip()
@@ -107,13 +109,13 @@ def translate_articles(articles, config):
     on_failure = config.translation.on_translate_failure
 
     if len(articles) <= batch_size:
-        return _translate_batch(articles, on_failure)
+        return _translate_batch(articles, on_failure, model=config.gemini.model)
 
     interval = config.translation.batch_interval_seconds
     translated = []
     for start in range(0, len(articles), batch_size):
         batch = articles[start : start + batch_size]
-        translated.extend(_translate_batch(batch, on_failure))
+        translated.extend(_translate_batch(batch, on_failure, model=config.gemini.model))
         if start + batch_size < len(articles):
             time.sleep(interval)
 
