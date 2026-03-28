@@ -63,6 +63,7 @@ def _make_config(
         translation=TranslationConfig(
             enabled=enabled,
             batch_size=batch_size,
+            batch_interval_seconds=15,
             on_translate_failure=on_translate_failure,
         ),
         index=IndexConfig(save_index=True, index_dir="./output", max_files=3),
