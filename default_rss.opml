@@ -19,10 +19,16 @@
             <outline type="rss" text="Deep Learning Focus (Cameron R. Wolfe)" title="Deep Learning Focus" xmlUrl="https://cameronrwolfe.substack.com/feed" htmlUrl="https://cameronrwolfe.substack.com/"/>
             <outline type="rss" text="Gary Marcus" title="Gary Marcus" xmlUrl="https://garymarcus.substack.com/feed" htmlUrl="https://garymarcus.substack.com/"/>
             <outline type="rss" text="Import AI (Jack Clark)" title="Import AI" xmlUrl="https://jack-clark.net/feed/" htmlUrl="https://jack-clark.net/"/>
+            <outline type="rss" text="The Gradient" title="The Gradient" xmlUrl="https://thegradient.pub/rss/" htmlUrl="https://thegradient.pub/"/>
+            <outline type="rss" text="Hugging Face Blog" title="Hugging Face Blog" xmlUrl="https://huggingface.co/blog/feed.xml" htmlUrl="https://huggingface.co/blog"/>
+            <outline type="rss" text="Google DeepMind Blog" title="Google DeepMind Blog" xmlUrl="https://deepmind.google/blog/rss.xml" htmlUrl="https://deepmind.google/blog/"/>
             <!-- EV/AV -->
             <outline type="rss" text="ADAS &amp; Autonomous Vehicle International" title="ADAS &amp; Autonomous Vehicle International" xmlUrl="https://www.autonomousvehicleinternational.com/feed" htmlUrl="https://www.autonomousvehicleinternational.com/"/>
             <outline type="rss" text="Electrek" title="Electrek" xmlUrl="http://electrek.co/feed/" htmlUrl="https://electrek.co/"/>
             <outline type="rss" text="The Last Driver License Holder…" title="The Last Driver License Holder…" xmlUrl="https://thelastdriverlicenseholder.com/feed/" htmlUrl="https://thelastdriverlicenseholder.com"/>
+            <outline type="rss" text="The Robot Report" title="The Robot Report" xmlUrl="https://www.therobotreport.com/feed/" htmlUrl="https://www.therobotreport.com/"/>
+            <outline type="rss" text="SAE International News" title="SAE International News" xmlUrl="https://www.sae.org/rss/news.xml" htmlUrl="https://www.sae.org/"/>
+            <outline type="rss" text="IEEE Spectrum" title="IEEE Spectrum" xmlUrl="https://spectrum.ieee.org/feeds/feed.rss" htmlUrl="https://spectrum.ieee.org/"/>
             <!-- 日本語 -->
             <outline type="rss" text="Zennのトレンド" title="Zennのトレンド" xmlUrl="https://zenn.dev/feed" htmlUrl="https://zenn.dev"/>
             <outline type="rss" text="Ledge.ai" title="Ledge.ai" xmlUrl="https://feedly.com/web/c7e34d7e-ba3d-498a-ab23-46b2d27a7c18" htmlUrl="https://ledge.ai/"/>
@@ -47,6 +53,8 @@
             <outline type="rss" text="Economic &amp; financial indicators" title="Economic &amp; financial indicators" xmlUrl="http://www.economist.com/rss/indicators_rss.xml" htmlUrl="https://www.economist.com/economic-and-financial-indicators"/>
             <outline type="rss" text="Business" title="Business" xmlUrl="http://www.economist.com/rss/business_rss.xml" htmlUrl="https://www.economist.com/business"/>
             <outline type="rss" text="ロイター 経済" title="ロイター 経済" xmlUrl="https://assets.wor.jp/rss/rdf/reuters/economy.rdf" htmlUrl="https://jp.reuters.com/economy/"/>
+            <outline type="rss" text="ロイター ビジネス" title="ロイター ビジネス" xmlUrl="https://assets.wor.jp/rss/rdf/reuters/business.rdf" htmlUrl="https://jp.reuters.com/business/"/>
+            <outline type="rss" text="ロイター ワールド" title="ロイター ワールド" xmlUrl="https://assets.wor.jp/rss/rdf/reuters/world.rdf" htmlUrl="https://jp.reuters.com/world/"/>
             <outline type="rss" text="Market Overview" title="Market Overview" xmlUrl="http://www.investing.com/rss/market_overview.rss" htmlUrl="https://www.investing.com"/>
             <outline type="rss" text="Ledge.ai" title="Ledge.ai" xmlUrl="https://ledge.ai/feed/" htmlUrl="https://ledge.ai"/>
             <outline type="rss" text="Semiaccurate" title="Semiaccurate" xmlUrl="http://semiaccurate.com/feed/" htmlUrl="https://www.semiaccurate.com/"/>
