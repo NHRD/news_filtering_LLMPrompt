@@ -61,11 +61,22 @@ def _to_et(dt: datetime) -> str:
 
 
 def _get_window() -> tuple:
-    """Return (window_start, window_end) as JST 08:00 today → JST 08:00 tomorrow."""
+    """Return (window_start, window_end).
+    - Sunday: JST 08:00 today → JST 23:59 Friday (full week preview)
+    - Other days: JST 08:00 today → JST 08:00 tomorrow
+    """
     jst = timezone(timedelta(hours=9))
     now_jst = datetime.now(jst)
     today_start = now_jst.replace(hour=8, minute=0, second=0, microsecond=0)
-    return today_start, today_start + timedelta(hours=24)
+
+    if now_jst.weekday() == 6:  # Sunday
+        days_to_friday = 5  # Sun(6) → Fri(4): 5 days ahead
+        friday = now_jst.date() + timedelta(days=days_to_friday)
+        window_end = datetime(friday.year, friday.month, friday.day, 23, 59, 59, tzinfo=jst)
+    else:
+        window_end = today_start + timedelta(hours=24)
+
+    return today_start, window_end
 
 
 def _fetch_ff(window_start: datetime, window_end: datetime,
