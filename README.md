@@ -263,6 +263,29 @@ news_filtering/
 └── requirements.txt          # Python 依存関係
 ```
 
+## 既知の制限と開発ロードマップ
+
+### タイムゾーン固定（JST）
+
+現在、インデックスファイルの AM/PM セッション判定およびファイル名のタイムスタンプは、ホストOSのローカル時刻（JST = UTC+9）を明示的に使用しています（`src/index_writer.py`）。
+
+**現状の制限:**
+- タイムゾーンは JST (UTC+9) にハードコードされています
+- 異なるタイムゾーンのサーバ（Docker コンテナ、海外VPS等）ではセッション判定がズレます
+
+**将来の対応計画:**
+- `config.yaml` に `schedule.timezone` 項目を追加し、任意のタイムゾーンを指定可能にする
+- Python 標準ライブラリ `zoneinfo`（Python 3.9+）を使用した実装に切り替える（例: `ZoneInfo("Asia/Tokyo")`）
+- これにより OSS 公開・Docker 配布時にも任意のタイムゾーンで動作可能になる
+
+```yaml
+# 将来の config.yaml イメージ
+schedule:
+  timezone: "Asia/Tokyo"   # IANA タイムゾーン名
+```
+
+---
+
 ## 重複排除の精度検証
 
 記事タイトルの類似度に基づく重複排除の精度を調整するために、以下の手順でカスタムデータを注入して検証できます。

@@ -4,7 +4,7 @@ import glob
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 try:
@@ -21,10 +21,12 @@ def write_index(numbered, config):
     # type: (List[NumberedArticle], AppConfig) -> None
     """Write numbered articles to a JSON index file and apply FIFO rotation.
 
-    Session is determined by current local hour: < 12 -> "AM", else -> "PM".
+    Session is determined by current JST hour: < 12 -> "AM", else -> "PM".
+    Note: timezone is hardcoded to JST (UTC+9). See README for future roadmap.
     I/O errors are logged at ERROR level and swallowed so the pipeline continues.
     """
-    now = datetime.now()
+    JST = timezone(timedelta(hours=9))
+    now = datetime.now(JST)
     session = "AM" if now.hour < 12 else "PM"
     date_str = now.strftime("%Y%m%d")
     time_str = now.strftime("%H%M%S")
