@@ -66,7 +66,7 @@ def _make_config(tmp_path: Path, save_index: bool = True, max_files: int = 3) ->
             state_file=str(tmp_path / "state/last_run.json"),
         ),
         system=SystemConfig(poweroff_after_run=False),
-        translation=TranslationConfig(enabled=True, batch_size=80, on_translate_failure="skip"),
+        translation=TranslationConfig(enabled=True, batch_size=80, batch_interval_seconds=0, on_translate_failure="skip"),
         index=IndexConfig(
             save_index=save_index,
             index_dir=str(tmp_path),
@@ -147,44 +147,55 @@ def test_ut_011_3_json_schema_all_fields(tmp_path: Path):
 
 # UT-011-4: FIFO: max_files=3で4件目書き込み時に最古が削除される
 def test_ut_011_4_fifo_max_files(tmp_path: Path):
-    # 既存ファイルを3件作成（古い順）
     existing_files = [
-        tmp_path / "news_index_20260309_AM.json",
-        tmp_path / "news_index_20260309_PM.json",
-        tmp_path / "news_index_20260310_AM.json",
+        tmp_path / "news_index_20260309_080000.json",
+        tmp_path / "news_index_20260309_200000.json",
+        tmp_path / "news_index_20260310_080000.json",
     ]
     for f in existing_files:
         f.write_text('{"session":"AM"}', encoding="utf-8")
 
     numbered = [_make_numbered_article(1)]
     config = _make_config(tmp_path, max_files=3)
-    fixed_time = datetime(2026, 3, 11, 8, 0, 0)
+    fixed_time = datetime(2026, 3, 10, 20, 0, 0)
 
     with patch("src.index_writer.datetime") as mock_dt:
-        mock_dt.now.side_effect = [fixed_time, datetime(2026, 3, 11, 8, 0, 0, tzinfo=timezone.utc)]
+        mock_dt.now.side_effect = [
+            fixed_time,
+            datetime(2026, 3, 10, 20, 0, 0, tzinfo=timezone.utc),
+        ]
         write_index(numbered, config)
 
     remaining = sorted(tmp_path.glob("news_index_*.json"))
-    assert len(remaining) == 3
-    # 最古の news_index_20260309_AM.json が削除されているはず
     names = [f.name for f in remaining]
-    assert "news_index_20260309_AM.json" not in names
-    # 新しいファイルが存在する
-    assert any("20260311" in n for n in names)
+
+    assert len(remaining) == 3
+    assert "news_index_20260309_080000.json" not in names
+    assert "news_index_20260309_200000.json" in names
+    assert "news_index_20260310_080000.json" in names
+    assert "news_index_20260310_200000.json" in names
 
 
-# UT-011-5: FIFO: ファイル名ソートが AM<PM の辞書順になっているか
-def test_ut_011_5_fifo_am_before_pm(tmp_path: Path):
-    # 同日の AM と PM を作成 → AM が辞書順で先 ('A' < 'P')
-    am_file = tmp_path / "news_index_20260311_AM.json"
-    pm_file = tmp_path / "news_index_20260311_PM.json"
-    am_file.write_text('{}', encoding="utf-8")
-    pm_file.write_text('{}', encoding="utf-8")
+# UT-011-5: FIFO: ファイル名の HHMMSS 辞書順が時系列順と一致するか
+def test_ut_011_5_fifo_hhmmss_lexicographic_order_matches_chronology(tmp_path: Path):
+    filenames = [
+        "news_index_20260309_080000.json",
+        "news_index_20260309_200000.json",
+        "news_index_20260310_080000.json",
+    ]
+    for name in filenames:
+        (tmp_path / name).write_text("{}", encoding="utf-8")
 
     files = sorted(tmp_path.glob("news_index_*.json"))
     names = [f.name for f in files]
 
-    assert names.index("news_index_20260311_AM.json") < names.index("news_index_20260311_PM.json")
+    assert names == [
+        "news_index_20260309_080000.json",
+        "news_index_20260309_200000.json",
+        "news_index_20260310_080000.json",
+    ]
+    assert names[0] < names[1]
+    assert names[1] < names[2]
 
 
 # UT-011-6: ディレクトリ自動作成（os.makedirs を使う実装を確認）
@@ -289,3 +300,34 @@ def test_ut_011_9_article_count_correct(tmp_path: Path):
     data = json.loads(files[0].read_text(encoding="utf-8"))
     assert data["article_count"] == 5
     assert len(data["articles"]) == 5
+
+
+def test_ut_011_10_same_second_rerun_overwrites_file(tmp_path: Path):
+    first_numbered = [_make_numbered_article(1, "First run", "初回実行")]
+    second_numbered = [
+        _make_numbered_article(1, "Second run 1", "再実行1"),
+        _make_numbered_article(2, "Second run 2", "再実行2"),
+    ]
+    config = _make_config(tmp_path)
+
+    fixed_time = datetime(2026, 3, 11, 8, 0, 5)
+    fixed_time_utc = datetime(2026, 3, 11, 8, 0, 5, tzinfo=timezone.utc)
+
+    with patch("src.index_writer.datetime") as mock_dt:
+        mock_dt.now.side_effect = [
+            fixed_time,
+            fixed_time_utc,
+            fixed_time,
+            fixed_time_utc,
+        ]
+        write_index(first_numbered, config)
+        write_index(second_numbered, config)
+
+    files = list(tmp_path.glob("news_index_*.json"))
+    assert len(files) == 1
+
+    data = json.loads(files[0].read_text(encoding="utf-8"))
+    assert data["article_count"] == 2
+    assert len(data["articles"]) == 2
+    assert data["articles"][0]["title_en"] == "Second run 1"
+    assert data["articles"][1]["title_en"] == "Second run 2"

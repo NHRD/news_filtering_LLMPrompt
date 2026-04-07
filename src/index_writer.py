@@ -27,7 +27,7 @@ def write_index(numbered, config):
     now = datetime.now()
     session = "AM" if now.hour < 12 else "PM"
     date_str = now.strftime("%Y%m%d")
-    time_str = now.strftime("%H%M")
+    time_str = now.strftime("%H%M%S")
     filename = f"news_index_{date_str}_{time_str}.json"
 
     index_dir = config.index.index_dir

@@ -107,6 +107,7 @@
 | UT-008-3 | 設定ファイル未存在時のエラー | Medium | FileNotFoundError |
 | UT-008-4 | 必須環境変数の欠落 | Medium | ValueError |
 | UT-008-5 | preferred_sources の読み込みと on_dedup_failure デフォルト値 | Medium | preferred_sources に設定値が読み込まれ、on_dedup_failure が "send_anyway" |
+| UT-008-6 | TranslationConfig の全フィールド読み込み | High | enabled, batch_size, batch_interval_seconds, on_translate_failure が設定値またはデフォルト値で AppConfig に反映される |
 
 ### UT-009: Translator (`src/translator.py`) **[NEW]**
 
@@ -139,11 +140,11 @@
 
 | ID | Description | Priority | Expected Result |
 |---|---|---|---|
-| UT-011-1 | 正常書き込み（AMセッション） | Critical | session="AM" の JSON が出力される |
-| UT-011-2 | 正常書き込み（PMセッション） | Critical | session="PM" の JSON が出力される |
+| UT-011-1 | 正常書き込み（AMセッション） | Critical | session='AM' かつファイル名が `news_index_YYYYMMDD_HHMM.json` 形式で出力される |
+| UT-011-2 | 正常書き込み（PMセッション） | Critical | session='PM' かつファイル名が `news_index_YYYYMMDD_HHMM.json` 形式で出力される |
 | UT-011-3 | JSONフォーマット検証（全フィールド存在確認） | Critical | session, run_time, article_count, articles が存在。articles 内に no, title_ja, title_en, link, source, category, published が存在 |
 | UT-011-4 | FIFO: max_files=3 で4件目書き込み時に最古が削除 | High | ファイル数が max_files 以内に収まる、最古が削除 |
-| UT-011-5 | FIFO: ファイル名ソートが AM<PM の辞書順 | Medium | AM ファイルが PM ファイルより辞書順で前になる |
+| UT-011-5 | FIFO: ファイル名ソートが HHMM の辞書順で時系列と一致 | Medium | `YYYYMMDD_HHMM` フォーマットのファイルが辞書順で時系列順と一致する |
 | UT-011-6 | ディレクトリ不在時は自動作成（実装依存） | Low | index_dir が存在しない場合に自動作成される（実装がそうなっている場合のみ） |
 | UT-011-7 | save_index=False → 書き込みスキップ | High | ファイルが生成されない |
 | UT-011-8 | I/O エラー → パイプライン継続（例外を吐かない） | Critical | write_index が例外を外に伝播しない |
@@ -179,7 +180,7 @@
 | E2E-002-3 | --force フラグ | Medium | last_run を無視 |
 | E2E-003-1 | translation.enabled=True の full pipeline | High | Translator が呼ばれ title_ja が HTML/JSON に反映される |
 | E2E-003-2 | translation.enabled=False の full pipeline | High | Translator がスキップされ title_ja="" のままで HTML/JSON が生成される |
-| E2E-003-3 | index.save_index=True の full pipeline | High | output/ に news_index_YYYYMMDD_AM|PM.json が生成される |
+| E2E-003-3 | index.save_index=True の full pipeline | High | output/ に news_index_YYYYMMDD_HHMM.json が生成される |
 | E2E-004-1 | メール件名の JST 日付フォーマット検証（AM セッション） | High | 件名が `News Digest \| AM \| N articles \| YYYY-MM-DD HH:MM JST - YYYY-MM-DD HH:MM JST` 形式で、UTC ではなく JST 時刻が含まれる |
 | E2E-004-2 | メール件名の JST 日付フォーマット検証（PM セッション） | High | 件名が `News Digest \| PM \| N articles \| YYYY-MM-DD HH:MM JST - YYYY-MM-DD HH:MM JST` 形式で、UTC ではなく JST 時刻が含まれる |
 | E2E-004-3 | 件名に UTC 文字列が含まれないこと | High | 件名中に "UTC" が含まれず "JST" が含まれる |
@@ -212,6 +213,7 @@
 | 英→日タイトル翻訳（Translator） | UT-009-1〜11, IT-005-1, E2E-003-1, E2E-003-2 |
 | translation.enabled=False スキップ | UT-009-10, E2E-003-2 |
 | 翻訳失敗時のフォールバック (skip/fail) | UT-009-6, UT-009-7, UT-009-8 |
+| batch_interval_seconds によるバッチ間インターバル | UT-009-2, UT-008-6 |
 | グローバル通し番号付与（Numbering） | UT-010-1〜6, IT-005-3 |
 | カテゴリ別グループ化（HTML Builder） | UT-006-2, UT-006-10 |
 | No.列と title_ja の HTML 出力 | UT-006-7, UT-006-8, UT-006-9 |

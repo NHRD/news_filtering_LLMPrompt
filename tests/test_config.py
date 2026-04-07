@@ -86,3 +86,41 @@ def test_ut_008_5_preferred_sources_loading(tmp_path, monkeypatch):
 
     assert "Reuters" in cfg.deduplication.preferred_sources
     assert cfg.deduplication.on_dedup_failure == "send_anyway"
+
+
+def test_ut_008_6_translation_batch_interval_seconds_loading(tmp_path, monkeypatch):
+    monkeypatch.setenv("GMAIL_ADDRESS", "sender@example.com")
+    monkeypatch.setenv("GMAIL_APP_PASSWORD", "pass")
+
+    cfg_with_value = tmp_path / "config_with_interval.yaml"
+    cfg_with_value.write_text(
+        _base_yaml()
+        + textwrap.dedent(
+            """
+            translation:
+              enabled: true
+              batch_size: 80
+              batch_interval_seconds: 5
+              on_translate_failure: skip
+            """
+        ),
+        encoding="utf-8",
+    )
+    cfg = load_config(str(cfg_with_value))
+    assert cfg.translation.batch_interval_seconds == 5
+
+    cfg_without_value = tmp_path / "config_default_interval.yaml"
+    cfg_without_value.write_text(
+        _base_yaml()
+        + textwrap.dedent(
+            """
+            translation:
+              enabled: true
+              batch_size: 80
+              on_translate_failure: skip
+            """
+        ),
+        encoding="utf-8",
+    )
+    cfg_default = load_config(str(cfg_without_value))
+    assert cfg_default.translation.batch_interval_seconds == 15

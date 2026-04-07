@@ -76,6 +76,7 @@ def _config_with_translation(tmp_path, translation_enabled=True, save_index=Fals
         translation=TranslationConfig(
             enabled=translation_enabled,
             batch_size=80,
+            batch_interval_seconds=0,
             on_translate_failure="skip",
         ),
         index=IndexConfig(
@@ -352,7 +353,7 @@ def test_it_005_1_translator_numbering_html_builder(monkeypatch):
         email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),
         output=OutputConfig(True, "./output", "./logs/x.log", "./state/x.json"),
         system=SystemConfig(poweroff_after_run=False),
-        translation=TranslationConfig(enabled=True, batch_size=80, on_translate_failure="skip"),
+        translation=TranslationConfig(enabled=True, batch_size=80, batch_interval_seconds=0, on_translate_failure="skip"),
     )
 
     mock_result = MagicMock()
@@ -398,7 +399,7 @@ def test_it_005_2_translator_numbering_index_writer(monkeypatch, tmp_path):
         email=EmailConfig("smtp.gmail.com", 587, "a@a", "p", ["b@b"], 200),
         output=OutputConfig(True, "./output", "./logs/x.log", "./state/x.json"),
         system=SystemConfig(poweroff_after_run=False),
-        translation=TranslationConfig(enabled=True, batch_size=80, on_translate_failure="skip"),
+        translation=TranslationConfig(enabled=True, batch_size=80, batch_interval_seconds=0, on_translate_failure="skip"),
         index=IndexConfig(save_index=True, index_dir=str(tmp_path / "output"), max_files=3),
     )
 
@@ -587,4 +588,4 @@ def test_e2e_003_3_save_index_true_full_pipeline(monkeypatch, tmp_path):
     assert len(json_files) == 1
     # ファイル名のパターンが正しいこと
     fname = json_files[0].name
-    assert re.match(r"news_index_\d{8}_(AM|PM)\.json", fname), f"Unexpected filename: {fname}"
+    assert re.match(r"news_index_\d{8}_\d{6}\.json", fname), f"Unexpected filename: {fname}"
