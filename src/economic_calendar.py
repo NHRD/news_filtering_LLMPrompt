@@ -63,16 +63,12 @@ def fetch_today_us_events(min_impact: str = "Medium", countries: List[str] = Non
         return []
 
     jst = timezone(timedelta(hours=9))
-    now = datetime.now(timezone.utc)
-    now_jst = now.astimezone(jst)
+    now_jst = datetime.now(jst)
 
-    if now_jst.weekday() == 6:  # Sunday
-        # Fetch through end of Friday (this week)
-        days_to_friday = 5  # Sun(6) -> Mon(0)...Fri(4): 5 days ahead
-        friday = now_jst.date() + timedelta(days=days_to_friday)
-        window_end = datetime(friday.year, friday.month, friday.day, 23, 59, 59, tzinfo=jst)
-    else:
-        window_end = now + timedelta(hours=24)
+    # Window: today 08:00 JST → tomorrow 08:00 JST
+    today_start = now_jst.replace(hour=8, minute=0, second=0, microsecond=0)
+    window_start = today_start
+    window_end = today_start + timedelta(hours=24)
 
     # Build set of FF currency codes to include
     target_countries = set(countries or ["US"])
@@ -97,8 +93,8 @@ def fetch_today_us_events(min_impact: str = "Medium", countries: List[str] = Non
             event_dt = datetime.fromisoformat(date_str)
             if event_dt.tzinfo is None:
                 event_dt = event_dt.replace(tzinfo=timezone.utc)
-            # Keep events within [now, now + 24h]
-            if not (now <= event_dt <= window_end):
+            # Keep events within [today 08:00 JST, tomorrow 08:00 JST]
+            if not (window_start <= event_dt <= window_end):
                 continue
         except (ValueError, TypeError):
             # No parseable datetime: skip
