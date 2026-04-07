@@ -1,4 +1,4 @@
-"""Fetch today's US economic calendar events from Forex Factory."""
+"""Fetch today's US economic calendar events from Forex Factory + TradingView."""
 
 import json
 import logging
@@ -7,6 +7,14 @@ from datetime import datetime, timedelta, timezone
 from typing import List, NamedTuple
 
 _FF_CALENDAR_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
+_TV_CALENDAR_URL = "https://economic-calendar.tradingview.com/events"
+
+_TV_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Origin": "https://www.tradingview.com",
+    "Referer": "https://www.tradingview.com/economic-calendar/",
+    "Content-Type": "application/x-www-form-urlencoded",
+}
 
 # Impact display order (High first)
 _IMPACT_ORDER = {"High": 0, "Medium": 1, "Low": 2}
@@ -22,6 +30,9 @@ _COUNTRY_TO_FF = {
     "DE": "EUR",
     "CN": "CNY",
 }
+
+# TradingView importance value → label
+_TV_IMPACT_MAP = {2: "High", 1: "Medium", 0: "Low", -1: "Low"}
 
 
 class EconomicEvent(NamedTuple):
@@ -41,16 +52,25 @@ def _to_jst(dt: datetime) -> str:
     return jst_dt.strftime("%H:%M JST")
 
 
-def fetch_today_us_events(min_impact: str = "Medium", countries: List[str] = None) -> List[EconomicEvent]:
-    """Fetch today's USD economic events.
+def _to_et(dt: datetime) -> str:
+    et_tz = timezone(timedelta(hours=-4))  # EDT (UTC-4)
+    try:
+        return dt.astimezone(et_tz).strftime("%-I:%M%p").lower()
+    except Exception:
+        return "All Day"
 
-    Args:
-        min_impact: Minimum impact level to include. "High" returns only high-impact.
-                    "Medium" returns High + Medium. "Low" returns all.
-        countries: List of country codes (e.g. ["US", "JP"]). Defaults to ["US"].
-    Returns:
-        List of EconomicEvent sorted by time, then impact.
-    """
+
+def _get_window() -> tuple:
+    """Return (window_start, window_end) as JST 08:00 today → JST 08:00 tomorrow."""
+    jst = timezone(timedelta(hours=9))
+    now_jst = datetime.now(jst)
+    today_start = now_jst.replace(hour=8, minute=0, second=0, microsecond=0)
+    return today_start, today_start + timedelta(hours=24)
+
+
+def _fetch_ff(window_start: datetime, window_end: datetime,
+              target_ff_codes: set, min_order: int) -> List[EconomicEvent]:
+    """Fetch from Forex Factory."""
     try:
         req = urllib.request.Request(
             _FF_CALENDAR_URL,
@@ -59,24 +79,10 @@ def fetch_today_us_events(min_impact: str = "Medium", countries: List[str] = Non
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode("utf-8"))
     except Exception as exc:
-        logging.warning("[EconCalendar] Failed to fetch calendar: %s", exc)
+        logging.warning("[EconCalendar] FF fetch failed: %s", exc)
         return []
 
-    jst = timezone(timedelta(hours=9))
-    now_jst = datetime.now(jst)
-
-    # Window: today 08:00 JST → tomorrow 08:00 JST
-    today_start = now_jst.replace(hour=8, minute=0, second=0, microsecond=0)
-    window_start = today_start
-    window_end = today_start + timedelta(hours=24)
-
-    # Build set of FF currency codes to include
-    target_countries = set(countries or ["US"])
-    target_ff_codes = {_COUNTRY_TO_FF.get(c, c) for c in target_countries}
-
-    min_order = _IMPACT_ORDER.get(min_impact, 1)
     events = []
-
     for item in data:
         if item.get("country") not in target_ff_codes:
             continue
@@ -85,40 +91,117 @@ def fetch_today_us_events(min_impact: str = "Medium", countries: List[str] = Non
             continue
         if _IMPACT_ORDER[impact] > min_order:
             continue
-
-        # Parse the date field - Forex Factory returns ISO 8601 with offset
         date_str = item.get("date", "")
-        event_dt = None
         try:
             event_dt = datetime.fromisoformat(date_str)
             if event_dt.tzinfo is None:
                 event_dt = event_dt.replace(tzinfo=timezone.utc)
-            # Keep events within [today 08:00 JST, tomorrow 08:00 JST]
             if not (window_start <= event_dt <= window_end):
                 continue
         except (ValueError, TypeError):
-            # No parseable datetime: skip
             continue
-
-        # Extract ET and JST times from the parsed datetime
-        try:
-            et_tz = timezone(timedelta(hours=-4))  # EDT (UTC-4)
-            time_et = event_dt.astimezone(et_tz).strftime("%-I:%M%p").lower()  # e.g. "10:00am"
-            time_jst = _to_jst(event_dt)
-        except Exception:
-            time_et = "All Day"
-            time_jst = "終日"
 
         events.append(EconomicEvent(
             title=item.get("title", ""),
             country=item.get("country", ""),
-            time_et=time_et,
-            time_jst=time_jst,
+            time_et=_to_et(event_dt),
+            time_jst=_to_jst(event_dt),
             impact=impact,
             forecast=str(item.get("forecast", "") or ""),
             previous=str(item.get("previous", "") or ""),
         ))
+    return events
 
-    # Sort by time (JST), then impact
+
+def _fetch_tv(window_start: datetime, window_end: datetime,
+              target_ff_codes: set, min_order: int) -> List[EconomicEvent]:
+    """Fetch from TradingView economic calendar."""
+    # TradingView uses ISO 8601 UTC
+    from_str = window_start.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    to_str = window_end.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+    post_data = f"from={urllib.parse.quote(from_str)}&to={urllib.parse.quote(to_str)}&countries=US,GB,JP,CA,AU,DE,FR,CN&importanceList=high,medium,low"
+
+    try:
+        req = urllib.request.Request(
+            _TV_CALENDAR_URL,
+            data=post_data.encode(),
+            headers=_TV_HEADERS,
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except Exception as exc:
+        logging.warning("[EconCalendar] TradingView fetch failed: %s", exc)
+        return []
+
+    # TradingView country code → FF currency code mapping
+    tv_country_to_ff = {
+        "US": "USD", "GB": "GBP", "JP": "JPY", "CA": "CAD",
+        "AU": "AUD", "FR": "EUR", "DE": "EUR", "CN": "CNY",
+    }
+
+    events = []
+    for item in data.get("result", []):
+        ff_code = tv_country_to_ff.get(item.get("country", ""), "")
+        if ff_code not in target_ff_codes:
+            continue
+        imp_val = item.get("importance", -1)
+        impact = _TV_IMPACT_MAP.get(imp_val, "Low")
+        if _IMPACT_ORDER[impact] > min_order:
+            continue
+        date_str = item.get("date", "")
+        try:
+            event_dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            if not (window_start <= event_dt <= window_end):
+                continue
+        except (ValueError, TypeError):
+            continue
+
+        events.append(EconomicEvent(
+            title=item.get("title", ""),
+            country=ff_code,
+            time_et=_to_et(event_dt),
+            time_jst=_to_jst(event_dt),
+            impact=impact,
+            forecast=str(item.get("forecast") or ""),
+            previous=str(item.get("previous") or ""),
+        ))
+    return events
+
+
+def fetch_today_us_events(min_impact: str = "Medium", countries: List[str] = None) -> List[EconomicEvent]:
+    """Fetch today's economic events from Forex Factory + TradingView, deduplicated.
+
+    Args:
+        min_impact: Minimum impact level. "High" = High only, "Medium" = High+Medium, "Low" = all.
+        countries: List of country codes (e.g. ["US", "JP"]). Defaults to ["US"].
+    Returns:
+        Deduplicated list of EconomicEvent sorted by time, then impact.
+    """
+    import urllib.parse  # noqa: ensure available
+
+    window_start, window_end = _get_window()
+    target_countries = set(countries or ["US"])
+    target_ff_codes = {_COUNTRY_TO_FF.get(c, c) for c in target_countries}
+    min_order = _IMPACT_ORDER.get(min_impact, 1)
+
+    ff_events = _fetch_ff(window_start, window_end, target_ff_codes, min_order)
+    tv_events = _fetch_tv(window_start, window_end, target_ff_codes, min_order)
+
+    logging.info("[EconCalendar] FF: %d events, TradingView: %d events", len(ff_events), len(tv_events))
+
+    # Deduplicate: key = (time_jst, normalized_title)
+    # FF takes priority (higher impact data); TV fills in missing events
+    seen = {}
+    for e in ff_events:
+        key = (e.time_jst, e.title.lower().strip())
+        seen[key] = e
+
+    for e in tv_events:
+        key = (e.time_jst, e.title.lower().strip())
+        if key not in seen:
+            seen[key] = e
+
+    events = list(seen.values())
     events.sort(key=lambda e: (e.time_jst, _IMPACT_ORDER.get(e.impact, 9)))
     return events
