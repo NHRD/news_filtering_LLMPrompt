@@ -46,10 +46,10 @@ class EconomicEvent(NamedTuple):
 
 
 def _to_jst(dt: datetime) -> str:
-    """Convert datetime to JST time string."""
+    """Convert datetime to JST date+time string."""
     jst = timezone(timedelta(hours=9))
     jst_dt = dt.astimezone(jst)
-    return jst_dt.strftime("%H:%M JST")
+    return jst_dt.strftime("%m/%d %H:%M JST")
 
 
 def _to_et(dt: datetime) -> str:
