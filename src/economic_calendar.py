@@ -70,9 +70,9 @@ def _get_window() -> tuple:
     today_start = now_jst.replace(hour=8, minute=0, second=0, microsecond=0)
 
     if now_jst.weekday() == 6:  # Sunday
-        days_to_friday = 5  # Sun(6) → Fri(4): 5 days ahead
-        friday = now_jst.date() + timedelta(days=days_to_friday)
-        window_end = datetime(friday.year, friday.month, friday.day, 23, 59, 59, tzinfo=jst)
+        days_to_saturday = 6  # Sun(6) → Sat(5): 6 days ahead
+        saturday = now_jst.date() + timedelta(days=days_to_saturday)
+        window_end = datetime(saturday.year, saturday.month, saturday.day, 8, 0, 0, tzinfo=jst)
     else:
         window_end = today_start + timedelta(hours=24)
 
