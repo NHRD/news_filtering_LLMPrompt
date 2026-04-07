@@ -11,6 +11,7 @@ from pathlib import Path
 try:
     from .config import AppConfig, load_config
     from .deduplicator import DeduplicationError, deduplicate_articles
+    from .economic_calendar import fetch_today_us_events
     from .email_sender import send_email
     from .html_builder import build_email_html, build_error_html
     from .index_writer import write_index
@@ -26,6 +27,7 @@ try:
 except ImportError:  # pragma: no cover
     from config import AppConfig, load_config
     from deduplicator import DeduplicationError, deduplicate_articles
+    from economic_calendar import fetch_today_us_events
     from email_sender import send_email
     from html_builder import build_email_html, build_error_html
     from index_writer import write_index
@@ -161,10 +163,24 @@ def run_pipeline(config, dry_run=False, fetch_only=False, force=False):
     # Numbering
     numbered = number_articles(translated)
 
+    now_dt = now_utc()
+    jst = timezone(timedelta(hours=9))
+    session = "AM" if now_dt.astimezone(jst).hour < 12 else "PM"
+    window_start = cutoff.astimezone(jst).strftime("%Y-%m-%d %H:%M JST")
+    window_end = now_dt.astimezone(jst).strftime("%Y-%m-%d %H:%M JST")
+    subject = f"News Digest | {session} | {len(capped)} articles | {window_start} - {window_end}"
+
+    # Fetch economic calendar for AM session only
+    economic_events = []
+    if session == "AM" and config.economic_calendar.enabled:
+        economic_events = fetch_today_us_events(config.economic_calendar.min_impact, config.economic_calendar.countries)
+        logging.info("[EconCalendar] Fetched %s events", len(economic_events))
+
     html = build_email_html(
         numbered,
         truncation_message=truncation_message,
         time_window_hours=config.schedule.time_window_hours,
+        economic_events=economic_events,
     )
     logging.info("[HTML Builder] Generated email (%s bytes)", len(html.encode("utf-8")))
     _write_html_if_needed(config, html)
@@ -172,13 +188,6 @@ def run_pipeline(config, dry_run=False, fetch_only=False, force=False):
     # Index writing
     if config.index.save_index:
         write_index(numbered, config)
-
-    now_dt = now_utc()
-    jst = timezone(timedelta(hours=9))
-    session = "AM" if now_dt.astimezone(jst).hour < 12 else "PM"
-    window_start = cutoff.astimezone(jst).strftime("%Y-%m-%d %H:%M JST")
-    window_end = now_dt.astimezone(jst).strftime("%Y-%m-%d %H:%M JST")
-    subject = f"News Digest | {session} | {len(capped)} articles | {window_start} - {window_end}"
 
     pipeline_success = False
     if dry_run:

@@ -66,8 +66,15 @@ class IndexConfig(NamedTuple):
     max_files: int
 
 
+class EconomicCalendarConfig(NamedTuple):
+    enabled: bool
+    min_impact: str        # "High" | "Medium" | "Low"
+    countries: List[str]   # Country codes e.g. ["US", "JP", "GB"]
+
+
 _DEFAULT_TRANSLATION = TranslationConfig(enabled=True, batch_size=80, batch_interval_seconds=15, on_translate_failure="skip")
 _DEFAULT_INDEX = IndexConfig(save_index=True, index_dir="./output", max_files=3)
+_DEFAULT_ECON_CALENDAR = EconomicCalendarConfig(enabled=False, min_impact="Medium", countries=["US"])
 
 
 class AppConfig(NamedTuple):
@@ -80,6 +87,7 @@ class AppConfig(NamedTuple):
     system: SystemConfig
     translation: TranslationConfig = _DEFAULT_TRANSLATION
     index: IndexConfig = _DEFAULT_INDEX
+    economic_calendar: EconomicCalendarConfig = _DEFAULT_ECON_CALENDAR
 
 
 def _resolve_env(value: Any) -> Any:
@@ -119,6 +127,7 @@ def load_config(path: str = "config.yaml") -> AppConfig:
     system = cfg.get("system", {})
     translation = cfg.get("translation", {})
     index = cfg.get("index", {})
+    econ_cal = cfg.get("economic_calendar", {})
 
     return AppConfig(
         feeds=FeedConfig(
@@ -165,5 +174,10 @@ def load_config(path: str = "config.yaml") -> AppConfig:
             save_index=bool(index.get("save_index", True)),
             index_dir=index.get("index_dir", "./output"),
             max_files=int(index.get("max_files", 3)),
+        ),
+        economic_calendar=EconomicCalendarConfig(
+            enabled=bool(econ_cal.get("enabled", False)),
+            min_impact=econ_cal.get("min_impact", "Medium"),
+            countries=list(econ_cal.get("countries", ["US"])),
         ),
     )

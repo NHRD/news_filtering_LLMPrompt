@@ -69,8 +69,9 @@ def build_email_html(
     template_path="templates/email.html",
     truncation_message="",
     time_window_hours=24,
+    economic_events=None,
 ):
-    # type: (Union[List[NumberedArticle], List[Article]], str, str, int) -> str
+    # type: (Union[List[NumberedArticle], List[Article]], str, str, int, object) -> str
     template_file = Path(template_path)
     env = Environment(
         loader=FileSystemLoader(str(template_file.parent)),
@@ -109,6 +110,7 @@ def build_email_html(
         generation_time=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         truncation_message=truncation_message,
         time_window_hours=time_window_hours,
+        economic_events=economic_events or [],
     )
 
 

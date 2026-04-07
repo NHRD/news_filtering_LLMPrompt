@@ -70,6 +70,36 @@
       border-top: 1px solid #eee;
       padding-top: 12px;
     }
+    .econ-section {
+      margin: 20px 0;
+      padding: 12px 16px;
+      background: #fff8e1;
+      border-left: 4px solid #f9a825;
+      border-radius: 4px;
+    }
+    .econ-title {
+      font-weight: bold;
+      color: #e65100;
+      margin-bottom: 8px;
+    }
+    .econ-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
+    }
+    .econ-table th {
+      text-align: left;
+      padding: 4px 8px;
+      background: #ffe082;
+      color: #333;
+    }
+    .econ-table td {
+      padding: 4px 8px;
+      border-bottom: 1px solid #ffe082;
+    }
+    .impact-High { color: #c62828; font-weight: bold; }
+    .impact-Medium { color: #e65100; }
+    .impact-Low { color: #555; }
   </style>
 </head>
 <body>
@@ -78,6 +108,38 @@
     <p>{{ date_range }}</p>
     <p>{{ article_count }} articles from {{ source_count }} sources</p>
   </div>
+
+  {% if economic_events %}
+  <div class="econ-section">
+    <div class="econ-title">Today's US Economic Events</div>
+    <table class="econ-table">
+      <thead>
+        <tr>
+          <th>JST</th>
+          <th>Time (ET)</th>
+          <th>Country</th>
+          <th>Event</th>
+          <th>Impact</th>
+          <th>Forecast</th>
+          <th>Previous</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ev in economic_events %}
+        <tr>
+          <td>{{ ev.time_jst }}</td>
+          <td>{{ ev.time_et }}</td>
+          <td>{{ ev.country }}</td>
+          <td>{{ ev.title }}</td>
+          <td><span class="impact-{{ ev.impact }}">{{ ev.impact }}</span></td>
+          <td>{{ ev.forecast }}</td>
+          <td>{{ ev.previous }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
 
   {% if categories %}
   {% for category in categories %}
